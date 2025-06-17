@@ -11,12 +11,13 @@ import {
   LogOut,
   UserCog,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 import { UserInfo } from "./user-info";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import Link from "next/link";
+import { menuItems } from "../config/menu-items";
 
 import {
   Sidebar,
@@ -33,94 +34,29 @@ import {
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 
-const menuItems = [
-  {
-    title: "Dashboard",
-    url: "/",
-    icon: Home,
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "hover:bg-blue-50 dark:hover:bg-blue-900/20",
-    permission: "view_dashboard",
-  },
-  {
-    title: "Quản lý users",
-    url: "/users",
-    icon: UserCog,
-    color: "text-cyan-600 dark:text-cyan-400",
-    bgColor: "hover:bg-cyan-50 dark:hover:bg-cyan-900/20",
-    permission: "manage_users",
-  },
-  {
-    title: "Quản lý tài khoản",
-    url: "/accounts",
-    icon: Users,
-    color: "text-green-600 dark:text-green-400",
-    bgColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
-    permission: "manage_accounts",
-  },
-  {
-    title: "Quản lý sản phẩm",
-    url: "/products",
-    icon: Package,
-    color: "text-purple-600 dark:text-purple-400",
-    bgColor: "hover:bg-purple-50 dark:hover:bg-purple-900/20",
-    permission: "manage_products",
-  },
-  {
-    title: "Quản lý đơn hàng",
-    url: "/orders",
-    icon: ShoppingCart,
-    color: "text-orange-600 dark:text-orange-400",
-    bgColor: "hover:bg-orange-50 dark:hover:bg-orange-900/20",
-    permission: "manage_orders",
-  },
-  {
-    title: "Quản lý tác vụ",
-    url: "/tasks",
-    icon: CheckSquare,
-    color: "text-pink-600 dark:text-pink-400",
-    bgColor: "hover:bg-pink-50 dark:hover:bg-pink-900/20",
-    permission: "manage_tasks",
-  },
-  {
-    title: "Báo cáo",
-    url: "/reports",
-    icon: BarChart3,
-    color: "text-indigo-600 dark:text-indigo-400",
-    bgColor: "hover:bg-indigo-50 dark:hover:bg-indigo-900/20",
-    permission: "view_reports",
-  },
-  {
-    title: "Cài đặt",
-    url: "/settings",
-    icon: Settings,
-    color: "text-gray-600 dark:text-gray-400",
-    bgColor: "hover:bg-gray-50 dark:hover:bg-gray-800",
-    permission: "manage_settings",
-  },
-];
-
-export function AppSidebar() {
+export default function AppSidebar() {
   const router = useRouter();
-  const [userPermissions, setUserPermissions] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
+  const [visibleMenuItems, setVisibleMenuItems] = useState(menuItems);
 
   useEffect(() => {
-    const fetchPermissions = async () => {
-      try {
-        const response = await axios.get("/api/users/me/permissions");
-        setUserPermissions(response.data.permissions);
-      } catch (error) {
-        console.error("Error fetching permissions:", error);
-        toast.error("Không thể tải thông tin quyền truy cập");
-      } finally {
-        setLoading(false);
-      }
-    };
+    try {
+      const userData = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("user="))
+        ?.split("=")[1];
 
-    fetchPermissions();
+      if (userData) {
+        const user = JSON.parse(decodeURIComponent(userData));
+        const filteredItems = menuItems.filter((item) =>
+          user.permissions.includes(item.permission)
+        );
+        setVisibleMenuItems(filteredItems);
+      }
+    } catch (error) {
+      console.error("Error reading user data from cookies:", error);
+    }
   }, []);
 
   const handleLogout = () => {
@@ -128,14 +64,6 @@ export function AppSidebar() {
     toast.success("Đăng xuất thành công");
     router.push("/login");
   };
-
-  const hasPermission = (permission: string) => {
-    return userPermissions.includes(permission);
-  };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <Sidebar>
@@ -166,27 +94,28 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {menuItems.map(
-                  (item) =>
-                    hasPermission(item.permission) && (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                          asChild
-                          className={`transition-all duration-200 ${item.bgColor} py-3`}
-                        >
-                          <Link
-                            href={item.url}
-                            className="flex items-center gap-3"
-                          >
-                            <item.icon className={`h-6 w-6 ${item.color}`} />
-                            <span className="font-medium text-base">
-                              {item.title}
-                            </span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )
-                )}
+                {visibleMenuItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      className={`transition-all duration-200 ${item.bgColor} py-3`}
+                    >
+                      <Link
+                        href={item.url}
+                        className={`flex items-center gap-3 ${
+                          pathname === item.url
+                            ? `${item.color}`
+                            : "text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        <item.icon className={`h-6 w-6 ${item.color}`} />
+                        <span className="font-medium text-base">
+                          {item.title}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
