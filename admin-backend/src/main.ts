@@ -27,6 +27,7 @@ async function bootstrap() {
     .setDescription('API for marketplace management dashboard')
     .setVersion('1.0')
     .addBearerAuth()
+    .addServer('/api')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

@@ -1,75 +1,104 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
+import { useForm } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Eye, EyeOff, Mail, Lock, BarChart3 } from "lucide-react";
+import { useState } from "react";
+import { authApi, LoginRequest } from "@/lib/api";
+import { toast } from "sonner";
 
-import { useState } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Eye, EyeOff, Mail, Lock, BarChart3 } from "lucide-react"
+type LoginFormData = LoginRequest;
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [rememberMe, setRememberMe] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [showPassword, setShowPassword] = useState(false);
+  const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>();
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      router.push("/")
-    }, 1500)
-  }
+  const loginMutation = useMutation({
+    mutationFn: async (data: LoginFormData) => {
+      const response = await authApi.login(data);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // Store token in localStorage
+      localStorage.setItem("user", JSON.stringify(data._doc));
+      toast.success("Đăng nhập thành công");
+      // router.push("/");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Đăng nhập thất bại");
+    },
+  });
+
+  const onSubmit = (data: LoginFormData) => {
+    loginMutation.mutate(data);
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 dark:from-blue-900 dark:via-blue-800 dark:to-blue-900 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
 
-      <Card className="w-full max-w-md shadow-2xl border-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm">
+      <Card className="w-full max-w-md shadow-2xl border-0 bg-card">
         <CardHeader className="space-y-1 text-center">
           <div className="flex items-center justify-center mb-4">
-            <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-blue-600">
-              <BarChart3 className="h-8 w-8 text-white" />
+            <div className="p-3 rounded-full bg-primary">
+              <BarChart3 className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent">
+          <CardTitle className="text-2xl font-bold">
             Chào mừng trở lại
           </CardTitle>
-          <CardDescription className="text-gray-600 dark:text-gray-400">
+          <CardDescription>
             Đăng nhập vào tài khoản của bạn để tiếp tục
           </CardDescription>
         </CardHeader>
 
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
                 Email
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="admin@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 h-12 border-2 focus:border-purple-500 transition-colors"
-                  required
+                  className="pl-10 h-12"
+                  {...register("email", {
+                    required: "Email là bắt buộc",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Email không hợp lệ",
+                    },
+                  })}
                 />
+                {errors.email && (
+                  <p className="text-sm text-destructive mt-1">
+                    {errors.email.message}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -78,15 +107,19 @@ export default function LoginPage() {
                 Mật khẩu
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10 h-12 border-2 focus:border-purple-500 transition-colors"
-                  required
+                  className="pl-10 pr-10 h-12"
+                  {...register("password", {
+                    required: "Mật khẩu là bắt buộc",
+                    minLength: {
+                      value: 6,
+                      message: "Mật khẩu phải có ít nhất 6 ký tự",
+                    },
+                  })}
                 />
                 <Button
                   type="button"
@@ -96,49 +129,31 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
+                    <Eye className="h-4 w-4 text-muted-foreground" />
                   )}
                 </Button>
+                {errors.password && (
+                  <p className="text-sm text-destructive mt-1">
+                    {errors.password.message}
+                  </p>
+                )}
               </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="remember"
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                />
-                <Label htmlFor="remember" className="text-sm text-gray-600 dark:text-gray-400">
-                  Ghi nhớ đăng nhập
-                </Label>
-              </div>
-              <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-500 font-medium">
-                Quên mật khẩu?
-              </Link>
             </div>
           </CardContent>
 
-          <CardFooter className="flex flex-col space-y-4">
+          <div className="px-6 pb-6">
             <Button
               type="submit"
-              className="w-full h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium transition-all duration-200 transform hover:scale-105"
-              disabled={isLoading}
+              className="w-full h-12"
+              disabled={loginMutation.isPending}
             >
-              {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+              {loginMutation.isPending ? "Đang đăng nhập..." : "Đăng nhập"}
             </Button>
-
-            <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-              Chưa có tài khoản?{" "}
-              <Link href="/register" className="text-blue-600 hover:text-blue-500 font-medium">
-                Đăng ký ngay
-              </Link>
-            </div>
-          </CardFooter>
+          </div>
         </form>
       </Card>
     </div>
-  )
+  );
 }
