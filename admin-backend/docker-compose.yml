@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: admin-dashboard-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: admin-dashboard
+    volumes:
+      - mongodb_data:/data/db
+
+  backend:
+    build: .
+    container_name: admin-dashboard-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/admin-dashboard
+      JWT_SECRET: your-super-secret-jwt-key-here
+      NODE_ENV: production
+    depends_on:
+      - mongodb
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+volumes:
+  mongodb_data:
