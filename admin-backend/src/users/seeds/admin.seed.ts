@@ -21,7 +21,6 @@ export class AdminSeed {
         email: 'admin@gmail.com',
         password: hashedPassword,
         role: 'admin',
-        status: 'active',
         permissions: [
           'view_dashboard',
           'manage_users',

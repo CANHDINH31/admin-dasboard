@@ -16,35 +16,13 @@ export class User {
 
   @Prop({
     required: true,
-    enum: ['admin', 'manager', 'user', 'viewer'],
+    enum: ['admin', 'user'],
     default: 'user',
   })
   role: string;
 
-  @Prop({
-    required: true,
-    enum: ['active', 'inactive', 'suspended'],
-    default: 'active',
-  })
-  status: string;
-
-  @Prop()
-  phone?: string;
-
-  @Prop()
-  department?: string;
-
-  @Prop()
-  avatar?: string;
-
   @Prop({ type: [String], default: [] })
   permissions: string[];
-
-  @Prop()
-  notes?: string;
-
-  @Prop({ default: Date.now })
-  lastLogin: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

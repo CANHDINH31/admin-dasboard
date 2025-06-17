@@ -5,12 +5,6 @@ import { UsersService } from '../users/users.service';
 import { User } from '../users/schemas/user.schema';
 import { Types } from 'mongoose';
 
-interface JwtPayload {
-  email: string;
-  sub: string;
-  role: string;
-}
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -36,18 +30,5 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
     return user;
-  }
-
-  async validateToken(token: string): Promise<JwtPayload> {
-    try {
-      const payload = this.jwtService.verify<JwtPayload>(token);
-      const user = await this.usersService.findOne(payload.sub);
-      if (!user || user.status !== 'active') {
-        throw new UnauthorizedException();
-      }
-      return payload;
-    } catch {
-      throw new UnauthorizedException();
-    }
   }
 }
