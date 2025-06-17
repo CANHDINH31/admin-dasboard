@@ -22,7 +22,16 @@ export class AdminSeed {
         password: hashedPassword,
         role: 'admin',
         status: 'active',
-        permissions: ['*'],
+        permissions: [
+          'view_dashboard',
+          'manage_users',
+          'manage_accounts',
+          'manage_products',
+          'manage_orders',
+          'manage_tasks',
+          'view_reports',
+          'manage_settings',
+        ],
       });
 
       console.log('Admin user created successfully');

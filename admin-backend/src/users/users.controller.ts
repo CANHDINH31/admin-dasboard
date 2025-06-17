@@ -6,6 +6,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -58,5 +59,19 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
+  }
+
+  @Get('me/permissions')
+  @ApiOperation({ summary: 'Get current user permissions' })
+  @ApiResponse({
+    status: 200,
+    description: 'User permissions retrieved successfully',
+  })
+  async getMyPermissions(@Request() req) {
+    const user = await this.usersService.findOne(req.user.id);
+    return {
+      role: user.role,
+      permissions: user.permissions,
+    };
   }
 }

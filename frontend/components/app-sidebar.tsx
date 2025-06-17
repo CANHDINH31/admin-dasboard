@@ -15,6 +15,8 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { toast } from "sonner";
 import { UserInfo } from "./user-info";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 import {
   Sidebar,
@@ -40,6 +42,7 @@ const menuItems = [
     icon: Home,
     color: "text-blue-600 dark:text-blue-400",
     bgColor: "hover:bg-blue-50 dark:hover:bg-blue-900/20",
+    permission: "view_dashboard",
   },
   {
     title: "Quản lý users",
@@ -47,6 +50,7 @@ const menuItems = [
     icon: UserCog,
     color: "text-cyan-600 dark:text-cyan-400",
     bgColor: "hover:bg-cyan-50 dark:hover:bg-cyan-900/20",
+    permission: "manage_users",
   },
   {
     title: "Quản lý tài khoản",
@@ -54,6 +58,7 @@ const menuItems = [
     icon: Users,
     color: "text-green-600 dark:text-green-400",
     bgColor: "hover:bg-green-50 dark:hover:bg-green-900/20",
+    permission: "manage_accounts",
   },
   {
     title: "Quản lý sản phẩm",
@@ -61,6 +66,7 @@ const menuItems = [
     icon: Package,
     color: "text-purple-600 dark:text-purple-400",
     bgColor: "hover:bg-purple-50 dark:hover:bg-purple-900/20",
+    permission: "manage_products",
   },
   {
     title: "Quản lý đơn hàng",
@@ -68,6 +74,7 @@ const menuItems = [
     icon: ShoppingCart,
     color: "text-orange-600 dark:text-orange-400",
     bgColor: "hover:bg-orange-50 dark:hover:bg-orange-900/20",
+    permission: "manage_orders",
   },
   {
     title: "Quản lý tác vụ",
@@ -75,6 +82,7 @@ const menuItems = [
     icon: CheckSquare,
     color: "text-pink-600 dark:text-pink-400",
     bgColor: "hover:bg-pink-50 dark:hover:bg-pink-900/20",
+    permission: "manage_tasks",
   },
   {
     title: "Báo cáo",
@@ -82,6 +90,7 @@ const menuItems = [
     icon: BarChart3,
     color: "text-indigo-600 dark:text-indigo-400",
     bgColor: "hover:bg-indigo-50 dark:hover:bg-indigo-900/20",
+    permission: "view_reports",
   },
   {
     title: "Cài đặt",
@@ -89,17 +98,44 @@ const menuItems = [
     icon: Settings,
     color: "text-gray-600 dark:text-gray-400",
     bgColor: "hover:bg-gray-50 dark:hover:bg-gray-800",
+    permission: "manage_settings",
   },
 ];
 
 export function AppSidebar() {
   const router = useRouter();
+  const [userPermissions, setUserPermissions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        const response = await axios.get("/api/users/me/permissions");
+        setUserPermissions(response.data.permissions);
+      } catch (error) {
+        console.error("Error fetching permissions:", error);
+        toast.error("Không thể tải thông tin quyền truy cập");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPermissions();
+  }, []);
 
   const handleLogout = () => {
     Cookies.remove("user");
     toast.success("Đăng xuất thành công");
     router.push("/login");
   };
+
+  const hasPermission = (permission: string) => {
+    return userPermissions.includes(permission);
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Sidebar>
@@ -130,21 +166,27 @@ export function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {menuItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      className={`transition-all duration-200 ${item.bgColor} py-3`}
-                    >
-                      <Link href={item.url} className="flex items-center gap-3">
-                        <item.icon className={`h-6 w-6 ${item.color}`} />
-                        <span className="font-medium text-base">
-                          {item.title}
-                        </span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {menuItems.map(
+                  (item) =>
+                    hasPermission(item.permission) && (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton
+                          asChild
+                          className={`transition-all duration-200 ${item.bgColor} py-3`}
+                        >
+                          <Link
+                            href={item.url}
+                            className="flex items-center gap-3"
+                          >
+                            <item.icon className={`h-6 w-6 ${item.color}`} />
+                            <span className="font-medium text-base">
+                              {item.title}
+                            </span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
