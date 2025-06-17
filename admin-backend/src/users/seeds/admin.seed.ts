@@ -29,8 +29,6 @@ export class AdminSeed {
           'manage_products',
           'manage_orders',
           'manage_tasks',
-          'view_reports',
-          'manage_settings',
         ],
       });
 

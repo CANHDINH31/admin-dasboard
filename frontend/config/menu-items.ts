@@ -67,20 +67,4 @@ export const menuItems: MenuItem[] = [
     bgColor: "hover:bg-pink-50 dark:hover:bg-pink-900/20",
     permission: "manage_tasks",
   },
-  {
-    title: "Báo cáo",
-    url: "/reports",
-    icon: BarChart3,
-    color: "text-indigo-600 dark:text-indigo-400",
-    bgColor: "hover:bg-indigo-50 dark:hover:bg-indigo-900/20",
-    permission: "view_reports",
-  },
-  {
-    title: "Cài đặt",
-    url: "/settings",
-    icon: Settings,
-    color: "text-gray-600 dark:text-gray-400",
-    bgColor: "hover:bg-gray-50 dark:hover:bg-gray-800",
-    permission: "manage_settings",
-  },
 ];
