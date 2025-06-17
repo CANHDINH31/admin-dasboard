@@ -19,6 +19,7 @@ import { Eye, EyeOff, Mail, Lock, BarChart3 } from "lucide-react";
 import { useState } from "react";
 import { authApi, LoginRequest } from "@/lib/api";
 import { toast } from "sonner";
+import Cookies from "js-cookie";
 
 type LoginFormData = LoginRequest;
 
@@ -38,10 +39,14 @@ export default function LoginPage() {
       return response.data;
     },
     onSuccess: (data) => {
-      // Store token in localStorage
-      localStorage.setItem("user", JSON.stringify(data._doc));
+      // Store token in cookie with js-cookie
+      Cookies.set("user", JSON.stringify(data._doc), {
+        expires: 7, // Cookie sẽ hết hạn sau 7 ngày
+        secure: process.env.NODE_ENV === "production", // Chỉ gửi cookie qua HTTPS trong môi trường production
+        sameSite: "strict", // Bảo vệ chống CSRF
+      });
       toast.success("Đăng nhập thành công");
-      // router.push("/");
+      router.push("/");
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Đăng nhập thất bại");
