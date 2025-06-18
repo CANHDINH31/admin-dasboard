@@ -13,7 +13,6 @@ import {
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -33,17 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import {
-  Plus,
-  Users,
-  UserCheck,
-  UserX,
-  Crown,
-  Loader2,
-  Edit,
-  Trash2,
-  Download,
-} from "lucide-react";
+import { Plus, Loader2, Download } from "lucide-react";
 import {
   useUsers,
   useCreateUser,
@@ -51,20 +40,15 @@ import {
   useDeleteUser,
   type User,
 } from "@/lib/hooks/useUsers";
-import { UserAvatar } from "@/components/ui/user-avatar";
 import {
-  getPermissionConfig,
   AVAILABLE_PERMISSIONS,
+  getPermissionConfig,
 } from "@/lib/constants/permissions";
+import { getUserColumns } from "@/lib/constants/userColumns";
 
 // MUI DataGrid imports
-import {
-  DataGrid,
-  GridColDef,
-  GridActionsCellItem,
-  GridToolbar,
-} from "@mui/x-data-grid";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { DataGrid } from "@mui/x-data-grid";
+import { Box } from "@mui/material";
 
 export default function UsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -84,7 +68,6 @@ export default function UsersPage() {
   const deleteUserMutation = useDeleteUser();
 
   const users = usersResponse?.data?.data || [];
-  const meta = usersResponse?.data?.meta;
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
@@ -127,93 +110,11 @@ export default function UsersPage() {
     a.click();
   };
 
-  // MUI DataGrid columns definition
-  const columns: GridColDef[] = [
-    {
-      field: "fullName",
-      headerName: "Người dùng",
-      width: 250,
-      renderCell: (params) => (
-        <div className="flex items-center  h-full w-full">
-          <UserAvatar
-            fullName={params.row.fullName}
-            email={params.row.email}
-            avatar={params.row.avatar}
-          />
-        </div>
-      ),
-    },
-    {
-      field: "email",
-      headerName: "Email",
-      width: 250,
-    },
-    {
-      field: "role",
-      headerName: "Vai trò",
-      width: 120,
-      renderCell: (params) => (
-        <Badge variant={params.value === "admin" ? "default" : "secondary"}>
-          {params.value === "admin" ? "Admin" : "User"}
-        </Badge>
-      ),
-    },
-    {
-      field: "permissions",
-      headerName: "Quyền hạn",
-      width: 350,
-      renderCell: (params) => (
-        <div className="flex flex-wrap gap-1.5 items-center h-full w-full">
-          {params.value.length === 0 ? (
-            <span className="text-xs text-gray-400 dark:text-gray-500 italic">
-              Không có quyền
-            </span>
-          ) : (
-            params.value.map((permission: string) => {
-              const permissionConfig = getPermissionConfig(permission);
-              return (
-                <span
-                  key={permission}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 hover:scale-105 ${permissionConfig.color}`}
-                  title={permission}
-                >
-                  <span className="text-xs">{permissionConfig.icon}</span>
-                  <span>{permissionConfig.label}</span>
-                </span>
-              );
-            })
-          )}
-        </div>
-      ),
-    },
-    {
-      field: "createdAt",
-      headerName: "Ngày tạo",
-      width: 120,
-      renderCell: (params) =>
-        new Date(params.value).toLocaleDateString("vi-VN"),
-    },
-    {
-      field: "actions",
-      type: "actions",
-      headerName: "Thao tác",
-      width: 120,
-      getActions: (params) => [
-        <GridActionsCellItem
-          icon={<Edit className="h-4 w-4" />}
-          label="Chỉnh sửa"
-          onClick={() => handleEdit(params.row)}
-          color="primary"
-        />,
-        <GridActionsCellItem
-          icon={<Trash2 className="h-4 w-4" />}
-          label="Xóa"
-          onClick={() => handleDelete(params.row)}
-          color="inherit"
-        />,
-      ],
-    },
-  ];
+  // Get columns with handlers
+  const columns = getUserColumns({
+    onEdit: handleEdit,
+    onDelete: handleDelete,
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,10 +190,6 @@ export default function UsersPage() {
                 <CardTitle className="text-gray-900 dark:text-gray-100">
                   Danh sách người dùng
                 </CardTitle>
-                <CardDescription>
-                  Quản lý users, phân quyền và theo dõi hoạt động. Sử dụng
-                  search và filter để tìm kiếm.
-                </CardDescription>
               </div>
               <div className="flex gap-2">
                 <Button
@@ -502,7 +399,6 @@ export default function UsersPage() {
                 columns={columns}
                 getRowId={(row) => row._id}
                 rowHeight={80}
-                slots={{ toolbar: GridToolbar }}
                 slotProps={{
                   toolbar: {
                     showQuickFilter: true,
