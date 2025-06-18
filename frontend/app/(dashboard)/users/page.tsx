@@ -31,6 +31,15 @@ export default function UsersPage() {
   const itemsPerPage = meta?.limit || 25;
   const totalItems = meta?.total || 0;
 
+  // Helper function to get selected IDs as array
+  const getSelectedIds = () => {
+    if (!selectedRows || !selectedRows.ids) return [];
+    return Array.from(selectedRows.ids);
+  };
+
+  const selectedIds = getSelectedIds();
+  const selectedCount = selectedIds.length;
+
   const handleEdit = (user: User) => {
     setEditingUser(user);
     setIsDialogOpen(true);
@@ -42,24 +51,22 @@ export default function UsersPage() {
     }
   };
 
-  // const handleBulkDelete = () => {
-  //   if (selectedRows.length === 0) return;
+  const handleBulkDelete = () => {
+    if (selectedCount === 0) return;
 
-  //   const selectedUsers = users.filter((user) =>
-  //     selectedRows.includes(user._id)
-  //   );
-  //   const userNames = selectedUsers.map((user) => user.fullName).join(", ");
+    const selectedUsers = users.filter((user) =>
+      selectedIds.includes(user._id)
+    );
+    const userNames = selectedUsers.map((user) => user.fullName).join(", ");
 
-  //   if (
-  //     confirm(`Bạn có chắc muốn xóa ${selectedRows.length} user: ${userNames}?`)
-  //   ) {
-  //     // Xóa từng user được chọn
-  //     selectedRows.forEach((userId: string) => {
-  //       deleteUserMutation.mutate(userId);
-  //     });
-  //     setSelectedRows([]); // Reset selection
-  //   }
-  // };
+    if (confirm(`Bạn có chắc muốn xóa ${selectedCount} user: ${userNames}?`)) {
+      // Xóa từng user được chọn
+      selectedIds.forEach((userId: string | number) => {
+        deleteUserMutation.mutate(userId.toString());
+      });
+      setSelectedRows(undefined); // Reset selection
+    }
+  };
 
   const handleAddClick = () => {
     setEditingUser(null);
@@ -109,22 +116,22 @@ export default function UsersPage() {
                 <CardTitle className="text-gray-900 dark:text-gray-100">
                   Danh sách người dùng
                 </CardTitle>
-                {/* {selectedRows.length > 0 && (
+                {selectedCount > 0 && (
                   <p className="text-sm text-gray-600 mt-1">
-                    Đã chọn {selectedRows.length} user
+                    Đã chọn {selectedCount} user
                   </p>
-                )} */}
+                )}
               </div>
               <div className="flex gap-2">
-                {/* {selectedRows.length > 0 && (
+                {selectedCount > 0 && (
                   <Button
                     variant="destructive"
                     onClick={handleBulkDelete}
                     className="flex items-center gap-2"
                   >
-                    Xóa ({selectedRows.length})
+                    Xóa ({selectedCount})
                   </Button>
-                )} */}
+                )}
                 <UserDialog
                   isOpen={isDialogOpen}
                   onOpenChange={setIsDialogOpen}
@@ -135,7 +142,7 @@ export default function UsersPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Box sx={{ height: "70vh", width: "100%" }}>
+            <Box sx={{ height: "calc(100vh - 280px)", width: "100%" }}>
               <DataGrid
                 rows={users}
                 columns={columns}
