@@ -5,13 +5,15 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, Search, X } from "lucide-react";
 import {
   useUsers,
   useDeleteUser,
   useBulkDeleteUsers,
   type User,
 } from "@/lib/hooks/useUsers";
+import { useDebounce } from "@/lib/hooks/useDebounce";
 import { UserDialog } from "@/components/users/UserDialog";
 
 // MUI DataGrid imports
@@ -25,9 +27,17 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [page, setPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>();
+  const [search, setSearch] = useState("");
+
+  // Use debounce hook
+  const debouncedSearch = useDebounce(search, 500);
 
   // TanStack Query hooks
-  const { data: usersResponse, isLoading, error } = useUsers({ page });
+  const {
+    data: usersResponse,
+    isLoading,
+    error,
+  } = useUsers({ page, search: debouncedSearch });
   const deleteUserMutation = useDeleteUser();
   const bulkDeleteMutation = useBulkDeleteUsers();
 
@@ -154,6 +164,37 @@ export default function UsersPage() {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Search Bar */}
+            <div className="relative mb-6">
+              <div className="relative group max-w-md">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                <div className="relative bg-white/90 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg shadow-blue-500/10">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4 z-10 group-hover:text-blue-500 transition-colors duration-200" />
+                  <Input
+                    placeholder="Tìm kiếm người dùng..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9 pr-9 py-2 h-10 text-sm border-0 bg-transparent focus:ring-0 focus:outline-none placeholder:text-gray-400 group-hover:placeholder:text-gray-500 transition-all duration-200"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors duration-200 hover:scale-110"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {debouncedSearch !== search && (
+                <div className="absolute -right-1 top-1/2 transform -translate-y-1/2">
+                  <div className="bg-blue-500 text-white rounded-full p-0.5 shadow-lg">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Box sx={{ height: "calc(100vh - 280px)", width: "100%" }}>
               <DataGrid
                 rows={users}
