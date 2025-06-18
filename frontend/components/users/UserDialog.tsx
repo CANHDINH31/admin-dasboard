@@ -77,12 +77,11 @@ export function UserDialog({
     e.preventDefault();
 
     if (editingUser) {
-      // Update existing user
+      // Update existing user - không gửi email vì không thể thay đổi
       updateUserMutation.mutate({
         id: editingUser._id,
         data: {
           fullName: formData.fullName,
-          email: formData.email,
           role: formData.role,
           permissions: formData.permissions,
           ...(formData.password && { password: formData.password }),
@@ -140,7 +139,14 @@ export function UserDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="email">
+                Email *{" "}
+                {editingUser && (
+                  <span className="text-xs text-gray-500">
+                    (Không thể thay đổi)
+                  </span>
+                )}
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -152,6 +158,11 @@ export function UserDialog({
                   })
                 }
                 required
+                disabled={!!editingUser}
+                className={editingUser ? "bg-gray-100 cursor-not-allowed" : ""}
+                title={
+                  editingUser ? "Email không thể thay đổi sau khi tạo" : ""
+                }
               />
             </div>
           </div>

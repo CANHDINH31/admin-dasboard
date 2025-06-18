@@ -39,10 +39,10 @@ export function UserInfo() {
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-2 hover:opacity-80">
         <Avatar className="h-8 w-8">
-          <AvatarImage
+          {/* <AvatarImage
             src="/avatars/01.png"
             alt={userData.name || userData.email}
-          />
+          /> */}
           <AvatarFallback>
             {userData.name
               ? userData.name[0].toUpperCase()

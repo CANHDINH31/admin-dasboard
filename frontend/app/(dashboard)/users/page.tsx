@@ -5,12 +5,12 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Loader2, Download } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useUsers, useDeleteUser, type User } from "@/lib/hooks/useUsers";
 import { UserDialog } from "@/components/users/UserDialog";
 
 // MUI DataGrid imports
-import { DataGrid } from "@mui/x-data-grid";
+import { DataGrid, GridRowSelectionModel } from "@mui/x-data-grid";
 import { Box } from "@mui/material";
 import { getUserColumns } from "@/components/users/userColumns";
 import { Pagination } from "@/components/ui/pagination";
@@ -19,6 +19,7 @@ export default function UsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [page, setPage] = useState(1);
+  const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>();
 
   // TanStack Query hooks
   const { data: usersResponse, isLoading, error } = useUsers({ page });
@@ -41,28 +42,24 @@ export default function UsersPage() {
     }
   };
 
-  const handleExport = () => {
-    if (!users.length) return;
+  // const handleBulkDelete = () => {
+  //   if (selectedRows.length === 0) return;
 
-    const csvContent = [
-      Object.keys(users[0])
-        .filter((key) => key !== "_id" && key !== "__v")
-        .join(","),
-      ...users.map((row) =>
-        Object.entries(row)
-          .filter(([key]) => key !== "_id" && key !== "__v")
-          .map(([_, val]) => (Array.isArray(val) ? val.join(";") : val))
-          .join(",")
-      ),
-    ].join("\n");
+  //   const selectedUsers = users.filter((user) =>
+  //     selectedRows.includes(user._id)
+  //   );
+  //   const userNames = selectedUsers.map((user) => user.fullName).join(", ");
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "users.csv";
-    a.click();
-  };
+  //   if (
+  //     confirm(`Bạn có chắc muốn xóa ${selectedRows.length} user: ${userNames}?`)
+  //   ) {
+  //     // Xóa từng user được chọn
+  //     selectedRows.forEach((userId: string) => {
+  //       deleteUserMutation.mutate(userId);
+  //     });
+  //     setSelectedRows([]); // Reset selection
+  //   }
+  // };
 
   const handleAddClick = () => {
     setEditingUser(null);
@@ -112,16 +109,22 @@ export default function UsersPage() {
                 <CardTitle className="text-gray-900 dark:text-gray-100">
                   Danh sách người dùng
                 </CardTitle>
+                {/* {selectedRows.length > 0 && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Đã chọn {selectedRows.length} user
+                  </p>
+                )} */}
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleExport}
-                  className="flex items-center gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Xuất CSV
-                </Button>
+                {/* {selectedRows.length > 0 && (
+                  <Button
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-2"
+                  >
+                    Xóa ({selectedRows.length})
+                  </Button>
+                )} */}
                 <UserDialog
                   isOpen={isDialogOpen}
                   onOpenChange={setIsDialogOpen}
@@ -132,12 +135,18 @@ export default function UsersPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Box sx={{ height: 600, width: "100%" }}>
+            <Box sx={{ height: "70vh", width: "100%" }}>
               <DataGrid
                 rows={users}
                 columns={columns}
                 getRowId={(row) => row._id}
                 rowHeight={80}
+                checkboxSelection
+                disableRowSelectionOnClick
+                onRowSelectionModelChange={(newSelectionModel) => {
+                  setSelectedRows(newSelectionModel);
+                }}
+                rowSelectionModel={selectedRows}
                 slotProps={{
                   toolbar: {
                     showQuickFilter: true,
