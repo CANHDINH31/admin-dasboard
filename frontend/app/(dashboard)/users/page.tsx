@@ -13,6 +13,7 @@ import { UserDialog } from "@/components/users/UserDialog";
 import { DataGrid } from "@mui/x-data-grid";
 import { Box } from "@mui/material";
 import { getUserColumns } from "@/components/users/userColumns";
+import { Pagination } from "@/components/ui/pagination";
 
 export default function UsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -138,12 +139,7 @@ export default function UsersPage() {
                     quickFilterProps: { debounceMs: 500 },
                   },
                 }}
-                pageSizeOptions={[10, 25, 50, 100]}
-                initialState={{
-                  pagination: {
-                    paginationModel: { page: 0, pageSize: 25 },
-                  },
-                }}
+                hideFooter={true}
                 sx={{
                   "& .MuiDataGrid-cell": {
                     borderBottom: "1px solid #e5e7eb",
@@ -158,6 +154,15 @@ export default function UsersPage() {
                 }}
               />
             </Box>
+
+            <Pagination
+              className="mt-4"
+              currentPage={1}
+              totalItems={45}
+              itemsPerPage={25}
+              totalPages={2}
+              onPageChange={() => console.log("hello")}
+            />
           </CardContent>
         </Card>
       </div>

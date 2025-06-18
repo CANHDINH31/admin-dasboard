@@ -16,7 +16,7 @@ export class UsersService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
-  async findAll(page: number = 1, limit: number = 10, search?: string) {
+  async findAll(page: number = 1, limit: number = 25, search?: string) {
     const skip = (page - 1) * limit;
 
     // Create base filter for search
