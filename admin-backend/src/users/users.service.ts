@@ -19,15 +19,18 @@ export class UsersService {
   async findAll(page: number = 1, limit: number = 25, search?: string) {
     const skip = (page - 1) * limit;
 
-    // Create base filter for search
-    const filter = search
-      ? {
-          $or: [
-            { fullName: { $regex: search, $options: 'i' } },
-            { email: { $regex: search, $options: 'i' } },
-          ],
-        }
-      : {};
+    // Create base filter for search and exclude super_admin
+    const filter = {
+      role: { $ne: 'super_admin' },
+      ...(search
+        ? {
+            $or: [
+              { fullName: { $regex: search, $options: 'i' } },
+              { email: { $regex: search, $options: 'i' } },
+            ],
+          }
+        : {}),
+    };
 
     const [users, total] = await Promise.all([
       this.userModel

@@ -20,7 +20,7 @@ export class AdminSeed {
         fullName: 'System Administrator',
         email: 'admin@gmail.com',
         password: hashedPassword,
-        role: 'admin',
+        role: 'super_admin',
         permissions: [
           'view_dashboard',
           'manage_users',
