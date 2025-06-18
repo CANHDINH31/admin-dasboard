@@ -98,5 +98,47 @@ export const useDeleteUser = () => {
   });
 };
 
+// Hook to bulk delete users
+export const useBulkDeleteUsers = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      // Xóa từng user một cách tuần tự
+      const results = [];
+      for (const id of ids) {
+        try {
+          const result = await usersApi.deleteUser(id);
+          results.push({ id, success: true, result });
+        } catch (error) {
+          results.push({ id, success: false, error });
+        }
+      }
+      return results;
+    },
+    onSuccess: (results, ids) => {
+      // Invalidate and refetch users list
+      queryClient.invalidateQueries({ queryKey: userKeys.lists() });
+
+      const successCount = results.filter((r) => r.success).length;
+      const failCount = results.filter((r) => !r.success).length;
+
+      if (failCount === 0) {
+        toast.success(`Đã xóa thành công ${successCount} user`);
+      } else if (successCount === 0) {
+        toast.error(`Không thể xóa ${failCount} user`);
+      } else {
+        toast.success(
+          `Đã xóa thành công ${successCount} user, ${failCount} user thất bại`
+        );
+      }
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Failed to delete users";
+      toast.error(message);
+    },
+  });
+};
+
 // Re-export types for convenience
 export type { User, CreateUserRequest, UpdateUserRequest, UsersResponse };

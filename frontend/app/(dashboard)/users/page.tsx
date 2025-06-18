@@ -6,7 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { useUsers, useDeleteUser, type User } from "@/lib/hooks/useUsers";
+import {
+  useUsers,
+  useDeleteUser,
+  useBulkDeleteUsers,
+  type User,
+} from "@/lib/hooks/useUsers";
 import { UserDialog } from "@/components/users/UserDialog";
 
 // MUI DataGrid imports
@@ -24,6 +29,7 @@ export default function UsersPage() {
   // TanStack Query hooks
   const { data: usersResponse, isLoading, error } = useUsers({ page });
   const deleteUserMutation = useDeleteUser();
+  const bulkDeleteMutation = useBulkDeleteUsers();
 
   const users = usersResponse?.data?.data || [];
   const meta = usersResponse?.data?.meta;
@@ -60,10 +66,8 @@ export default function UsersPage() {
     const userNames = selectedUsers.map((user) => user.fullName).join(", ");
 
     if (confirm(`Bạn có chắc muốn xóa ${selectedCount} user: ${userNames}?`)) {
-      // Xóa từng user được chọn
-      selectedIds.forEach((userId: string | number) => {
-        deleteUserMutation.mutate(userId.toString());
-      });
+      // Sử dụng bulk delete hook
+      bulkDeleteMutation.mutate(selectedIds.map((id) => id.toString()));
       setSelectedRows(undefined); // Reset selection
     }
   };
@@ -127,9 +131,17 @@ export default function UsersPage() {
                   <Button
                     variant="destructive"
                     onClick={handleBulkDelete}
+                    disabled={bulkDeleteMutation.isPending}
                     className="flex items-center gap-2"
                   >
-                    Xóa ({selectedCount})
+                    {bulkDeleteMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Đang xóa...
+                      </>
+                    ) : (
+                      `Xóa (${selectedCount})`
+                    )}
                   </Button>
                 )}
                 <UserDialog
