@@ -26,60 +26,24 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-import { Plus, Users, UserCheck, UserX, Crown } from "lucide-react";
+import { Plus, Users, UserCheck, UserX, Crown, Loader2 } from "lucide-react";
+import {
+  useUsers,
+  useCreateUser,
+  useUpdateUser,
+  useDeleteUser,
+  type User,
+} from "@/lib/hooks/useUsers";
 
-const mockUsers = [
-  {
-    id: "1",
-    fullName: "Nguyễn Văn Admin",
-    email: "admin@company.com",
-    permissions: [
-      "view_dashboard",
-      "manage_users",
-      "manage_accounts",
-      "manage_products",
-      "manage_orders",
-      "manage_tasks",
-    ],
-    lastLogin: "2024-01-20 10:30:00",
-    createdAt: "2023-01-15",
-  },
-  {
-    id: "2",
-    fullName: "Trần Thị Manager",
-    email: "manager@company.com",
-    permissions: ["view_dashboard", "manage_products", "manage_orders"],
-    lastLogin: "2024-01-20 09:15:00",
-    createdAt: "2023-03-20",
-  },
-  {
-    id: "3",
-    fullName: "Lê Văn User",
-    email: "user@company.com",
-    permissions: ["view_dashboard"],
-    lastLogin: "2024-01-19 16:45:00",
-    createdAt: "2023-06-10",
-  },
-  {
-    id: "4",
-    fullName: "Phạm Thị Viewer",
-    email: "viewer@company.com",
-    permissions: ["view_dashboard"],
-    lastLogin: "2024-01-15 14:20:00",
-    createdAt: "2023-08-05",
-  },
-  {
-    id: "5",
-    fullName: "Hoàng Văn Suspended",
-    email: "suspended@company.com",
-    permissions: [],
-    lastLogin: "2024-01-10 11:30:00",
-    createdAt: "2023-04-12",
-  },
-];
-
-const UserAvatar = ({ user }: { user: any }) => (
+const UserAvatar = ({ user }: { user: User }) => (
   <div className="flex items-center gap-3">
     <Avatar className="h-10 w-10">
       <AvatarImage
@@ -102,17 +66,32 @@ const UserAvatar = ({ user }: { user: any }) => (
 );
 
 export default function UsersPage() {
-  const [data, setData] = useState(mockUsers);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     password: "",
-    permissions: ["read"],
+    role: "user" as "admin" | "user",
+    permissions: [] as string[],
   });
 
-  const columns: Column<any>[] = [
+  // TanStack Query hooks
+  const { data: usersResponse, isLoading, error } = useUsers();
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
+  const deleteUserMutation = useDeleteUser();
+
+  const users = usersResponse?.data?.data || [];
+  const meta = usersResponse?.data?.meta;
+
+  // Transform users to be compatible with AdvancedTable
+  const transformedUsers = users.map((user) => ({
+    ...user,
+    id: user._id, // Add id property for AdvancedTable compatibility
+  }));
+
+  const columns: Column<User>[] = [
     {
       key: "fullName",
       header: "Người dùng",
@@ -129,6 +108,18 @@ export default function UsersPage() {
       width: "w-64",
     },
     {
+      key: "role",
+      header: "Vai trò",
+      sortable: true,
+      filterable: true,
+      render: (role) => (
+        <Badge variant={role === "admin" ? "default" : "secondary"}>
+          {role === "admin" ? "Admin" : "User"}
+        </Badge>
+      ),
+      width: "w-32",
+    },
+    {
       key: "permissions",
       header: "Quyền hạn",
       sortable: true,
@@ -136,20 +127,13 @@ export default function UsersPage() {
       render: (permissions) => (
         <div className="flex flex-wrap gap-1">
           {permissions.map((permission: string) => (
-            <Badge key={permission} variant="secondary">
+            <Badge key={permission} variant="outline" className="text-xs">
               {permission}
             </Badge>
           ))}
         </div>
       ),
       width: "w-64",
-    },
-    {
-      key: "lastLogin",
-      header: "Đăng nhập cuối",
-      sortable: true,
-      render: (value) => new Date(value).toLocaleString("vi-VN"),
-      width: "w-40",
     },
     {
       key: "createdAt",
@@ -160,20 +144,21 @@ export default function UsersPage() {
     },
   ];
 
-  const handleEdit = (user: any) => {
+  const handleEdit = (user: User) => {
     setEditingUser(user);
     setFormData({
       fullName: user.fullName,
       email: user.email,
       password: "",
+      role: user.role,
       permissions: user.permissions,
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (user: any) => {
+  const handleDelete = (user: User) => {
     if (confirm(`Bạn có chắc muốn xóa user ${user.fullName}?`)) {
-      setData(data.filter((item) => item.id !== user.id));
+      deleteUserMutation.mutate(user._id);
     }
   };
 
@@ -182,20 +167,25 @@ export default function UsersPage() {
 
     if (editingUser) {
       // Update existing user
-      setData(
-        data.map((user) =>
-          user.id === editingUser.id ? { ...user, ...formData } : user
-        )
-      );
+      updateUserMutation.mutate({
+        id: editingUser._id,
+        data: {
+          fullName: formData.fullName,
+          email: formData.email,
+          role: formData.role,
+          permissions: formData.permissions,
+          ...(formData.password && { password: formData.password }),
+        },
+      });
     } else {
-      // Add new user
-      const newUser = {
-        id: Date.now().toString(),
-        ...formData,
-        lastLogin: new Date().toISOString(),
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setData([...data, newUser]);
+      // Create new user
+      createUserMutation.mutate({
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        permissions: formData.permissions,
+      });
     }
 
     setIsDialogOpen(false);
@@ -204,16 +194,22 @@ export default function UsersPage() {
       fullName: "",
       email: "",
       password: "",
-      permissions: ["read"],
+      role: "user",
+      permissions: [],
     });
   };
 
   const handleExport = () => {
+    if (!users.length) return;
+
     const csvContent = [
-      Object.keys(mockUsers[0]).join(","),
-      ...data.map((row) =>
-        Object.values(row)
-          .map((val) => (Array.isArray(val) ? val.join(";") : val))
+      Object.keys(users[0])
+        .filter((key) => key !== "_id" && key !== "__v")
+        .join(","),
+      ...users.map((row) =>
+        Object.entries(row)
+          .filter(([key]) => key !== "_id" && key !== "__v")
+          .map(([_, val]) => (Array.isArray(val) ? val.join(";") : val))
           .join(",")
       ),
     ].join("\n");
@@ -226,12 +222,30 @@ export default function UsersPage() {
     a.click();
   };
 
-  const totalUsers = data.length;
-  const activeUsers = data.length;
-  const adminUsers = data.filter((u) =>
-    u.permissions.includes("manage_users")
-  ).length;
+  const totalUsers = meta?.total || users.length;
+  const activeUsers = users.length;
+  const adminUsers = users.filter((u) => u.role === "admin").length;
   const suspendedUsers = 0;
+
+  if (isLoading) {
+    return (
+      <SidebarInset>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </SidebarInset>
+    );
+  }
+
+  if (error) {
+    return (
+      <SidebarInset>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-red-500">Error loading users</div>
+        </div>
+      </SidebarInset>
+    );
+  }
 
   return (
     <SidebarInset>
@@ -320,7 +334,8 @@ export default function UsersPage() {
                         fullName: "",
                         email: "",
                         password: "",
-                        permissions: ["read"],
+                        role: "user",
+                        permissions: [],
                       });
                     }}
                   >
@@ -369,20 +384,43 @@ export default function UsersPage() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Mật khẩu *</Label>
-                      <Input
-                        id="password"
-                        type="password"
-                        value={formData.password}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            password: e.target.value,
-                          })
-                        }
-                        required
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="password">
+                          {editingUser
+                            ? "Mật khẩu (để trống nếu không đổi)"
+                            : "Mật khẩu *"}
+                        </Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              password: e.target.value,
+                            })
+                          }
+                          required={!editingUser}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="role">Vai trò *</Label>
+                        <Select
+                          value={formData.role}
+                          onValueChange={(value: "admin" | "user") =>
+                            setFormData({ ...formData, role: value })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Chọn vai trò" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="user">User</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
                     <div className="space-y-2">
@@ -536,8 +574,24 @@ export default function UsersPage() {
                     </div>
 
                     <DialogFooter>
-                      <Button type="submit">
-                        {editingUser ? "Cập nhật" : "Tạo user"}
+                      <Button
+                        type="submit"
+                        disabled={
+                          createUserMutation.isPending ||
+                          updateUserMutation.isPending
+                        }
+                      >
+                        {createUserMutation.isPending ||
+                        updateUserMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            {editingUser ? "Đang cập nhật..." : "Đang tạo..."}
+                          </>
+                        ) : editingUser ? (
+                          "Cập nhật"
+                        ) : (
+                          "Tạo user"
+                        )}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -547,7 +601,7 @@ export default function UsersPage() {
           </CardHeader>
           <CardContent>
             <AdvancedTable
-              data={data}
+              data={transformedUsers}
               columns={columns}
               onEdit={handleEdit}
               onDelete={handleDelete}
