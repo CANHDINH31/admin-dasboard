@@ -24,7 +24,7 @@ export class UsersController {
   @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
   async findAll(
     @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('limit') limit: number = 25,
     @Query('search') search?: string,
   ) {
     return this.usersService.findAll(page, limit, search);

@@ -18,12 +18,17 @@ import { Pagination } from "@/components/ui/pagination";
 export default function UsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [page, setPage] = useState(1);
 
   // TanStack Query hooks
-  const { data: usersResponse, isLoading, error } = useUsers();
+  const { data: usersResponse, isLoading, error } = useUsers({ page });
   const deleteUserMutation = useDeleteUser();
 
   const users = usersResponse?.data?.data || [];
+  const meta = usersResponse?.data?.meta;
+  const totalPages = meta?.totalPages || 1;
+  const itemsPerPage = meta?.limit || 25;
+  const totalItems = meta?.total || 0;
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
@@ -157,11 +162,11 @@ export default function UsersPage() {
 
             <Pagination
               className="mt-4"
-              currentPage={1}
-              totalItems={45}
-              itemsPerPage={25}
-              totalPages={2}
-              onPageChange={() => console.log("hello")}
+              currentPage={page}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              totalPages={totalPages}
+              onPageChange={(page) => setPage(page)}
             />
           </CardContent>
         </Card>

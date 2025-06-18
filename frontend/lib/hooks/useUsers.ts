@@ -28,6 +28,7 @@ export const useUsers = (params?: {
     queryKey: userKeys.list(params),
     queryFn: () => usersApi.getUsers(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    placeholderData: (previousData) => previousData, // Sử dụng dữ liệu cũ làm placeholder
   });
 };
 
