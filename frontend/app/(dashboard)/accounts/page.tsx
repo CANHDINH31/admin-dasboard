@@ -1,27 +1,34 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
-import { AdvancedTable, type Column } from "@/components/advanced-table"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Users, Globe, Shield } from "lucide-react"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Input } from "@/components/ui/input";
+import { Loader2, Search, X } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Box } from "@mui/material";
+import { DataGrid, GridRowSelectionModel } from "@mui/x-data-grid";
+import { Pagination } from "@/components/ui/pagination";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { AccountDialog } from "@/components/accounts/AccountDialog";
+import { getAccountColumns } from "@/components/accounts/accountColumns";
+import { AccountStats } from "@/components/accounts/AccountStats";
 
 interface Account {
-  id: string
-  marketplace: string
-  accName: string
-  profileName: string
-  sheetID: string
-  accountInfo: string
-  proxy: string
-  clientID: string
-  clientSecret: string
-  telegramId: string
-  status: "active" | "inactive" | "suspended"
-  createdAt: string
-  lastSync: string
+  id: string;
+  marketplace: string;
+  accName: string;
+  profileName: string;
+  sheetID: string;
+  accountInfo: string;
+  proxy: string;
+  clientID: string;
+  clientSecret: string;
+  telegramId: string;
+  status: "active" | "inactive" | "suspended";
+  createdAt: string;
+  lastSync: string;
 }
 
 const mockAccounts: Account[] = [
@@ -85,121 +92,71 @@ const mockAccounts: Account[] = [
     createdAt: "2024-01-01",
     lastSync: "2024-01-15 16:45:00",
   },
-]
-
-const getMarketplaceBadge = (marketplace: string) => {
-  const colors = {
-    eBay: "bg-blue-500 text-white",
-    Amazon: "bg-orange-500 text-white",
-    Walmart: "bg-green-500 text-white",
-  }
-  return <Badge className={colors[marketplace as keyof typeof colors] || ""}>{marketplace}</Badge>
-}
-
-const getStatusBadge = (status: string) => {
-  const variants = {
-    active: "default",
-    inactive: "secondary",
-    suspended: "destructive",
-  } as const
-  return <Badge variant={variants[status as keyof typeof variants]}>{status}</Badge>
-}
+];
 
 export default function AccountsPage() {
-  const [data, setData] = useState<Account[]>(mockAccounts)
+  const [data, setData] = useState<Account[]>(mockAccounts);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState(null);
+  const [page, setPage] = useState(1);
+  const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>();
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
 
-  const columns: Column<Account>[] = [
-    {
-      key: "marketplace",
-      header: "Marketplace",
-      sortable: true,
-      filterable: true,
-      filterType: "select",
-      filterOptions: ["eBay", "Amazon", "Walmart"],
-      render: (value) => getMarketplaceBadge(value),
-      width: "w-32",
-    },
-    {
-      key: "accName",
-      header: "Tên tài khoản",
-      sortable: true,
-      filterable: true,
-      render: (value) => <span className="font-semibold">{value}</span>,
-      width: "w-48",
-    },
-    {
-      key: "profileName",
-      header: "Profile Name",
-      sortable: true,
-      filterable: true,
-      width: "w-40",
-    },
-    {
-      key: "accountInfo",
-      header: "Thông tin",
-      filterable: true,
-      render: (value) => <span className="text-sm text-gray-600 truncate max-w-32 block">{value}</span>,
-      width: "w-48",
-    },
-    {
-      key: "proxy",
-      header: "Proxy",
-      filterable: true,
-      render: (value) => <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">{value}</code>,
-      width: "w-36",
-    },
-    {
-      key: "telegramId",
-      header: "Telegram",
-      filterable: true,
-      render: (value) => <span className="text-blue-600 dark:text-blue-400">{value}</span>,
-      width: "w-32",
-    },
-    {
-      key: "status",
-      header: "Trạng thái",
-      sortable: true,
-      filterable: true,
-      filterType: "select",
-      filterOptions: ["active", "inactive", "suspended"],
-      render: (value) => getStatusBadge(value),
-      width: "w-32",
-    },
-    {
-      key: "createdAt",
-      header: "Ngày tạo",
-      sortable: true,
-      width: "w-28",
-    },
-    {
-      key: "lastSync",
-      header: "Sync cuối",
-      sortable: true,
-      width: "w-36",
-    },
-  ]
+  const itemsPerPage = 10;
+  const totalItems = data.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const pagedData = data
+    .filter((row) => {
+      if (!debouncedSearch) return true;
+      return (
+        row.accName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        row.marketplace.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        row.profileName.toLowerCase().includes(debouncedSearch.toLowerCase())
+      );
+    })
+    .slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
-  const handleEdit = (account: Account) => {
-    console.log("Edit account:", account.id)
-  }
+  const getSelectedIds = () => {
+    if (!selectedRows || !selectedRows.ids) return [];
+    return Array.from(selectedRows.ids);
+  };
+  const selectedIds = getSelectedIds();
+  const selectedCount = selectedIds.length;
 
-  const handleDelete = (account: Account) => {
-    setData(data.filter((item) => item.id !== account.id))
-  }
+  const handleEdit = (account: any) => {
+    setEditingAccount(account);
+    setIsDialogOpen(true);
+  };
 
-  const handleExport = () => {
-    const csvContent = [
-      Object.keys(mockAccounts[0]).join(","),
-      ...data.map((row) => Object.values(row).join(",")),
-    ].join("\n")
+  const handleDelete = (account: any) => {
+    if (confirm(`Bạn có chắc muốn xóa tài khoản ${account.accName}?`)) {
+      setData((prev) => prev.filter((item) => item.id !== account.id));
+    }
+  };
 
-    const blob = new Blob([csvContent], { type: "text/csv" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "accounts.csv"
-    a.click()
-  }
+  const handleBulkDelete = () => {
+    if (selectedCount === 0) return;
+    const selectedAccounts = data.filter((acc) => selectedIds.includes(acc.id));
+    const accNames = selectedAccounts.map((acc) => acc.accName).join(", ");
+    if (
+      confirm(`Bạn có chắc muốn xóa ${selectedCount} tài khoản: ${accNames}?`)
+    ) {
+      setData((prev) => prev.filter((item) => !selectedIds.includes(item.id)));
+      setSelectedRows(undefined);
+    }
+  };
+
+  const handleAddClick = () => {
+    setEditingAccount(null);
+    setIsDialogOpen(true);
+  };
+
+  // Columns cho DataGrid
+  const columns = getAccountColumns({
+    onEdit: handleEdit,
+    onDelete: handleDelete,
+  });
 
   return (
     <SidebarInset>
@@ -210,70 +167,108 @@ export default function AccountsPage() {
         </h1>
       </header>
       <div className="flex flex-1 flex-col gap-6 p-6 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Tổng tài khoản</CardTitle>
-              <Users className="h-5 w-5 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data.length}</div>
-              <p className="text-xs opacity-80">Đang quản lý</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-cyan-600 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Đang hoạt động</CardTitle>
-              <Globe className="h-5 w-5 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data.filter((acc) => acc.status === "active").length}</div>
-              <p className="text-xs opacity-80">Tài khoản active</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-violet-600 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Marketplace</CardTitle>
-              <Shield className="h-5 w-5 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{new Set(data.map((acc) => acc.marketplace)).size}</div>
-              <p className="text-xs opacity-80">Nền tảng khác nhau</p>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Main Table */}
         <Card className="border-0 shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-gray-900 dark:text-gray-100">Danh sách tài khoản</CardTitle>
-                <CardDescription>
-                  Quản lý tất cả tài khoản marketplace. Sử dụng search và filter để tìm kiếm dữ liệu.
-                </CardDescription>
+                <CardTitle className="text-gray-900 dark:text-gray-100">
+                  Danh sách tài khoản
+                </CardTitle>
+                {selectedCount > 0 && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Đã chọn {selectedCount} tài khoản
+                  </p>
+                )}
               </div>
-              <Button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Thêm tài khoản
-              </Button>
+              <div className="flex gap-2">
+                {selectedCount > 0 && (
+                  <Button
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-2"
+                  >
+                    Xóa ({selectedCount})
+                  </Button>
+                )}
+                <AccountDialog
+                  isOpen={isDialogOpen}
+                  onOpenChange={setIsDialogOpen}
+                  editingAccount={editingAccount}
+                  onAddClick={handleAddClick}
+                />
+              </div>
             </div>
           </CardHeader>
           <CardContent>
-            <AdvancedTable
-              data={data}
-              columns={columns}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onExport={handleExport}
-              searchPlaceholder="Tìm kiếm tài khoản..."
+            {/* Search Bar */}
+            <div className="relative mb-6">
+              <div className="relative group max-w-md">
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                <div className="relative bg-white/90 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg shadow-green-500/10">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4 z-10 group-hover:text-green-500 transition-colors duration-200" />
+                  <Input
+                    placeholder="Tìm kiếm tài khoản..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9 pr-9 py-2 h-10 text-sm border-0 bg-transparent focus:ring-0 focus:outline-none placeholder:text-gray-400 group-hover:placeholder:text-gray-500 transition-all duration-200"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors duration-200 hover:scale-110"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {debouncedSearch !== search && (
+                <div className="absolute -right-1 top-1/2 transform -translate-y-1/2">
+                  <div className="bg-green-500 text-white rounded-full p-0.5 shadow-lg">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  </div>
+                </div>
+              )}
+            </div>
+            <Box sx={{ height: "calc(100vh - 280px)", width: "100%" }}>
+              <DataGrid
+                rows={pagedData}
+                columns={columns}
+                getRowId={(row) => row.id}
+                rowHeight={80}
+                checkboxSelection
+                disableRowSelectionOnClick
+                onRowSelectionModelChange={(newSelectionModel) => {
+                  setSelectedRows(newSelectionModel);
+                }}
+                rowSelectionModel={selectedRows}
+                hideFooter={true}
+                sx={{
+                  "& .MuiDataGrid-cell": {
+                    borderBottom: "1px solid #e5e7eb",
+                  },
+                  "& .MuiDataGrid-columnHeaders": {
+                    backgroundColor: "#f9fafb",
+                    borderBottom: "2px solid #e5e7eb",
+                  },
+                  "& .MuiDataGrid-row:hover": {
+                    backgroundColor: "#f3f4f6",
+                  },
+                }}
+              />
+            </Box>
+            <Pagination
+              className="mt-4"
+              currentPage={page}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              totalPages={totalPages}
+              onPageChange={(page) => setPage(page)}
             />
           </CardContent>
         </Card>
       </div>
     </SidebarInset>
-  )
+  );
 }
