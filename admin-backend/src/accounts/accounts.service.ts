@@ -34,7 +34,12 @@ export class AccountsService {
     }
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
-      this.accountModel.find(query).skip(skip).limit(limit).exec(),
+      this.accountModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
       this.accountModel.countDocuments(query).exec(),
     ]);
     return {
