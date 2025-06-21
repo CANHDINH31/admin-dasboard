@@ -150,7 +150,6 @@ export default function AccountsPage() {
             </div>
           </CardHeader>
           <CardContent className="w-full">
-            aaa
             {/* Search Bar */}
             <div className="relative mb-6">
               <div className="relative group max-w-md">
@@ -185,10 +184,8 @@ export default function AccountsPage() {
             <Box
               sx={{
                 height: "calc(100vh - 280px)",
-                // maxWidth: "70vw",
               }}
             >
-              bbb
               <DataGrid
                 rows={accounts}
                 columns={columns}

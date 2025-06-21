@@ -63,9 +63,9 @@ export const getAccountColumns = ({
     headerName: "Sheet ID",
     width: 140,
     renderCell: (params) => (
-      <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded truncate block max-w-[120px]">
+      <span className="text-sm truncate block max-w-[120px] flex items-center justify-center w-full h-full">
         {params.value}
-      </code>
+      </span>
     ),
   },
   {
@@ -73,7 +73,7 @@ export const getAccountColumns = ({
     headerName: "Thông tin",
     width: 180,
     renderCell: (params) => (
-      <span className="text-sm text-gray-600 truncate max-w-[140px] block">
+      <span className="text-sm truncate max-w-[140px] block flex items-center justify-center w-full h-full">
         {params.value}
       </span>
     ),
@@ -83,38 +83,12 @@ export const getAccountColumns = ({
     headerName: "Proxy",
     width: 120,
     renderCell: (params) => (
-      <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded truncate block max-w-[100px]">
+      <span className="text-sm truncate block max-w-[100px] flex items-center justify-center w-full h-full">
         {params.value}
-      </code>
+      </span>
     ),
   },
-  {
-    field: "clientID",
-    headerName: "Client ID",
-    width: 140,
-    renderCell: (params) => (
-      <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded truncate block max-w-[120px]">
-        {params.value}
-      </code>
-    ),
-  },
-  {
-    field: "clientSecret",
-    headerName: "Client Secret",
-    width: 140,
-    renderCell: (params) => {
-      const value = params.value || "";
-      const masked =
-        value.length > 4
-          ? "*".repeat(value.length - 4) + value.slice(-4)
-          : value;
-      return (
-        <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded truncate block max-w-[120px]">
-          {masked}
-        </code>
-      );
-    },
-  },
+
   {
     field: "telegramId",
     headerName: "Telegram ID",
@@ -136,11 +110,7 @@ export const getAccountColumns = ({
     headerName: "Ngày tạo",
     width: 110,
   },
-  {
-    field: "lastSync",
-    headerName: "Sync cuối",
-    width: 140,
-  },
+
   {
     field: "actions",
     type: "actions",
