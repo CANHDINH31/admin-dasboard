@@ -1,60 +1,57 @@
-import { ApiProperty } from "@nestjs/swagger"
-import { IsNotEmpty, IsOptional, IsEnum, IsNumber, IsArray, Min } from "class-validator"
+import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  IsArray,
+  Min,
+  IsString,
+  IsPositive,
+} from 'class-validator';
 
 export class CreateProductDto {
-  @ApiProperty({ example: "SKU001" })
+  @ApiProperty({
+    example: 'SKU001',
+    description: 'Stock Keeping Unit - unique identifier',
+  })
   @IsNotEmpty()
-  sku: string
-
-  @ApiProperty({ example: "iPhone 15 Pro Max 256GB" })
-  @IsNotEmpty()
-  name: string
-
-  @ApiProperty({ example: "ebay_store_01" })
-  @IsNotEmpty()
-  account: string
-
-  @ApiProperty({ example: "eBay" })
-  @IsNotEmpty()
-  marketplace: string
-
-  @ApiProperty({ example: 1299 })
-  @IsNumber()
-  @Min(0)
-  price: number
-
-  @ApiProperty({ example: 25 })
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  stock?: number
+  @IsString()
+  sku: string;
 
   @ApiProperty({
-    example: "active",
-    enum: ["active", "inactive", "out of stock"],
+    example: '123456789012',
+    description: 'Universal Product Code - unique identifier',
   })
-  @IsEnum(["active", "inactive", "out of stock"])
-  @IsOptional()
-  status?: string
+  @IsNotEmpty()
+  @IsString()
+  upc: string;
+
+  @ApiProperty({ example: 'WMID001', description: 'Walmart ID' })
+  @IsNotEmpty()
+  @IsString()
+  wmid: string;
 
   @ApiProperty({
-    example: "tracking",
-    enum: ["tracking", "paused", "stopped"],
+    example: 'iPhone 15 Pro Max 256GB',
+    description: 'Product name',
   })
-  @IsEnum(["tracking", "paused", "stopped"])
-  @IsOptional()
-  trackingStatus?: string
+  @IsNotEmpty()
+  @IsString()
+  name: string;
 
-  @ApiProperty({ example: "Product description", required: false })
-  @IsOptional()
-  description?: string
+  @ApiProperty({ example: 1299.99, description: 'Site price of the product' })
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  sitePrice: number;
 
-  @ApiProperty({ example: ["image1.jpg", "image2.jpg"], required: false })
-  @IsArray()
-  @IsOptional()
-  images?: string[]
-
-  @ApiProperty({ example: "Electronics", required: false })
-  @IsOptional()
-  category?: string
+  @ApiProperty({
+    example: 1199.99,
+    description: 'Selling price of the product',
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  sellingPrice: number;
 }

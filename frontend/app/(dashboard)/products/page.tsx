@@ -1,355 +1,128 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
-import { Eye, TrendingUp, TrendingDown, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-interface Product {
-  id: string;
-  sku: string;
-  name: string;
-  account: string;
-  marketplace: string;
-  price: number;
-  stock: number;
-  status: string;
-  trackingStatus: string;
-  views: number;
-  sales: number;
-  revenue: number;
-  conversionRate: number;
-  lastUpdated: string;
-}
-
-const mockProducts: Product[] = [
-  {
-    id: "1",
-    sku: "SKU001",
-    name: "iPhone 15 Pro Max 256GB",
-    account: "ebay_store_01",
-    marketplace: "eBay",
-    price: 1299,
-    stock: 25,
-    status: "active",
-    trackingStatus: "tracking",
-    views: 1250,
-    sales: 15,
-    revenue: 19485,
-    conversionRate: 1.2,
-    lastUpdated: "2024-01-20 10:30:00",
-  },
-  {
-    id: "2",
-    sku: "SKU002",
-    name: "Samsung Galaxy S24 Ultra",
-    account: "amz_seller_02",
-    marketplace: "Amazon",
-    price: 999,
-    stock: 0,
-    status: "out of stock",
-    trackingStatus: "paused",
-    views: 890,
-    sales: 8,
-    revenue: 7992,
-    conversionRate: 0.9,
-    lastUpdated: "2024-01-19 15:20:00",
-  },
-  {
-    id: "3",
-    sku: "SKU003",
-    name: "MacBook Air M3 13-inch",
-    account: "walmart_seller_03",
-    marketplace: "Walmart",
-    price: 1199,
-    stock: 12,
-    status: "active",
-    trackingStatus: "tracking",
-    views: 2100,
-    sales: 22,
-    revenue: 26378,
-    conversionRate: 1.05,
-    lastUpdated: "2024-01-20 09:15:00",
-  },
-  {
-    id: "4",
-    sku: "SKU004",
-    name: "AirPods Pro 2nd Generation",
-    account: "ebay_store_01",
-    marketplace: "eBay",
-    price: 249,
-    stock: 45,
-    status: "active",
-    trackingStatus: "tracking",
-    views: 3200,
-    sales: 67,
-    revenue: 16683,
-    conversionRate: 2.1,
-    lastUpdated: "2024-01-20 11:45:00",
-  },
-  {
-    id: "5",
-    sku: "SKU005",
-    name: "Dell XPS 13 Laptop",
-    account: "amz_seller_02",
-    marketplace: "Amazon",
-    price: 899,
-    stock: 8,
-    status: "active",
-    trackingStatus: "tracking",
-    views: 1580,
-    sales: 12,
-    revenue: 10788,
-    conversionRate: 0.76,
-    lastUpdated: "2024-01-20 08:20:00",
-  },
-  {
-    id: "6",
-    sku: "SKU006",
-    name: "Sony WH-1000XM5 Headphones",
-    account: "walmart_seller_03",
-    marketplace: "Walmart",
-    price: 349,
-    stock: 0,
-    status: "out of stock",
-    trackingStatus: "paused",
-    views: 2450,
-    sales: 28,
-    revenue: 9772,
-    conversionRate: 1.14,
-    lastUpdated: "2024-01-19 16:45:00",
-  },
-];
-
-const getMarketplaceBadge = (marketplace: string) => {
-  const colors = {
-    eBay: "bg-blue-500 text-white",
-    Amazon: "bg-orange-500 text-white",
-    Walmart: "bg-green-500 text-white",
-  };
-  return (
-    <Badge className={colors[marketplace as keyof typeof colors] || ""}>
-      {marketplace}
-    </Badge>
-  );
-};
-
-const getStatusBadge = (status: string) => {
-  const variants = {
-    active: "default",
-    inactive: "secondary",
-    "out of stock": "destructive",
-    tracking: "default",
-    paused: "secondary",
-    stopped: "destructive",
-  } as const;
-  return (
-    <Badge variant={variants[status as keyof typeof variants] || "outline"}>
-      {status}
-    </Badge>
-  );
-};
-
-const CurrencyCell = ({ value }: { value: number }) => (
-  <span className="font-mono font-semibold">${value.toLocaleString()}</span>
-);
-
-const ProgressBar = ({ value, max = 5 }: { value: number; max?: number }) => {
-  const percentage = Math.min((value / max) * 100, 100);
-  return (
-    <div className="w-full">
-      <div className="flex justify-between text-xs mb-1">
-        <span>{value}%</span>
-        <span>{percentage.toFixed(1)}%</span>
-      </div>
-      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-        <div
-          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
-    </div>
-  );
-};
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Input } from "@/components/ui/input";
+import { Loader2, Search, X } from "lucide-react";
+import { Box } from "@mui/material";
+import { DataGrid, GridRowSelectionModel } from "@mui/x-data-grid";
+import { Pagination } from "@/components/ui/pagination";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { ProductDialog } from "@/components/products/ProductDialog";
+import { getProductColumns } from "@/components/products/productColumns";
+import {
+  useProducts,
+  useDeleteProduct,
+  useBulkDeleteProducts,
+  useCreateProduct,
+  useUpdateProduct,
+  Product,
+} from "@/lib/hooks/useProducts";
 
 export default function ProductsPage() {
-  const [data, setData] = useState<Product[]>(mockProducts);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [page, setPage] = useState(1);
+  const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>();
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
 
-  const columns: Column<Product>[] = [
-    {
-      key: "sku",
-      header: "SKU",
-      sortable: true,
-      filterable: true,
-      render: (value) => (
-        <code className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-1 rounded">
-          {value}
-        </code>
-      ),
-      width: "w-24",
-    },
-    {
-      key: "name",
-      header: "Tên sản phẩm",
-      sortable: true,
-      filterable: true,
-      render: (value) => (
-        <div className="font-medium text-sm leading-tight py-1 max-w-48 truncate">
-          {value}
-        </div>
-      ),
-      width: "w-64",
-    },
-    {
-      key: "marketplace",
-      header: "Marketplace",
-      sortable: true,
-      filterable: true,
-      filterType: "select",
-      filterOptions: ["eBay", "Amazon", "Walmart"],
-      render: (value) => getMarketplaceBadge(value),
-      width: "w-32",
-    },
-    {
-      key: "account",
-      header: "Tài khoản",
-      sortable: true,
-      filterable: true,
-      filterType: "select",
-      filterOptions: ["ebay_store_01", "amz_seller_02", "walmart_seller_03"],
-      width: "w-36",
-    },
-    {
-      key: "price",
-      header: "Giá",
-      sortable: true,
-      filterable: true,
-      filterType: "number",
-      render: (value) => <CurrencyCell value={value} />,
-      width: "w-24",
-    },
-    {
-      key: "stock",
-      header: "Tồn kho",
-      sortable: true,
-      filterable: true,
-      filterType: "number",
-      render: (value) => (
-        <span
-          className={`font-semibold ${
-            value === 0 ? "text-red-600" : "text-green-600"
-          }`}
-        >
-          {value}
-        </span>
-      ),
-      width: "w-20",
-    },
-    {
-      key: "views",
-      header: "Lượt xem",
-      sortable: true,
-      filterable: true,
-      filterType: "number",
-      render: (value) => (
-        <span className="text-blue-600 dark:text-blue-400 font-medium">
-          {value.toLocaleString()}
-        </span>
-      ),
-      width: "w-24",
-    },
-    {
-      key: "sales",
-      header: "Đã bán",
-      sortable: true,
-      filterable: true,
-      filterType: "number",
-      render: (value) => (
-        <span className="text-green-600 font-semibold">{value}</span>
-      ),
-      width: "w-20",
-    },
-    {
-      key: "revenue",
-      header: "Doanh thu",
-      sortable: true,
-      filterable: true,
-      filterType: "number",
-      render: (value) => <CurrencyCell value={value} />,
-      width: "w-28",
-    },
-    {
-      key: "conversionRate",
-      header: "Tỷ lệ chuyển đổi",
-      sortable: true,
-      filterable: true,
-      filterType: "number",
-      render: (value) => <ProgressBar value={value} max={5} />,
-      width: "w-36",
-    },
-    {
-      key: "status",
-      header: "Trạng thái",
-      sortable: true,
-      filterable: true,
-      filterType: "select",
-      filterOptions: ["active", "inactive", "out of stock"],
-      render: (value) => getStatusBadge(value),
-      width: "w-28",
-    },
-    {
-      key: "trackingStatus",
-      header: "Tracking",
-      sortable: true,
-      filterable: true,
-      filterType: "select",
-      filterOptions: ["tracking", "paused", "stopped"],
-      render: (value) => getStatusBadge(value),
-      width: "w-28",
-    },
-    {
-      key: "lastUpdated",
-      header: "Cập nhật cuối",
-      sortable: true,
-      filterable: true,
-      width: "w-36",
-    },
-  ];
+  // API hooks
+  const {
+    data: productsResponse,
+    isLoading,
+    error,
+  } = useProducts({ page, search: debouncedSearch });
+  const deleteProductMutation = useDeleteProduct();
+  const bulkDeleteMutation = useBulkDeleteProducts();
+  const createProductMutation = useCreateProduct();
+  const updateProductMutation = useUpdateProduct();
+
+  const products = productsResponse?.data?.data || [];
+  const meta = productsResponse?.data?.meta;
+  const totalPages = meta?.totalPages || 1;
+  const itemsPerPage = meta?.limit || 10;
+  const totalItems = meta?.total || 0;
+
+  const getSelectedIds = () => {
+    if (!selectedRows || !selectedRows.ids) return [];
+    return Array.from(selectedRows.ids);
+  };
+  const selectedIds = getSelectedIds();
+  const selectedCount = selectedIds.length;
 
   const handleEdit = (product: Product) => {
-    console.log("Edit product:", product.id);
+    setEditingProduct(product);
+    setIsDialogOpen(true);
   };
 
   const handleDelete = (product: Product) => {
-    setData(data.filter((item) => item.id !== product.id));
+    if (confirm(`Bạn có chắc muốn xóa sản phẩm ${product.name}?`)) {
+      deleteProductMutation.mutate(product._id);
+    }
   };
 
-  const handleExport = () => {
-    const csvContent = [
-      Object.keys(mockProducts[0]).join(","),
-      ...data.map((row) => Object.values(row).join(",")),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "products.csv";
-    a.click();
+  const handleBulkDelete = () => {
+    if (selectedCount === 0) return;
+    const selectedProducts = products.filter((product: Product) =>
+      selectedIds.includes(product._id)
+    );
+    const productNames = selectedProducts
+      .map((product: Product) => product.name)
+      .join(", ");
+    if (
+      confirm(
+        `Bạn có chắc muốn xóa ${selectedCount} sản phẩm: ${productNames}?`
+      )
+    ) {
+      bulkDeleteMutation.mutate(selectedIds.map((id) => id.toString()));
+      setSelectedRows(undefined);
+    }
   };
 
-  const totalProducts = data.length;
-  const activeProducts = data.filter((p) => p.status === "active").length;
-  const outOfStock = data.filter((p) => p.status === "out of stock").length;
-  const totalRevenue = data.reduce((sum, p) => sum + p.revenue, 0);
+  const handleAddClick = () => {
+    setEditingProduct(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = (data: Partial<Product>) => {
+    if (editingProduct) {
+      updateProductMutation.mutate({
+        id: editingProduct._id,
+        data,
+      });
+    } else {
+      createProductMutation.mutate(data as any);
+    }
+  };
+
+  // Columns cho DataGrid
+  const columns = getProductColumns({
+    onEdit: handleEdit,
+    onDelete: handleDelete,
+  });
+
+  if (isLoading) {
+    return (
+      <SidebarInset>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </SidebarInset>
+    );
+  }
+
+  if (error) {
+    return (
+      <SidebarInset>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-red-500">Error loading products</div>
+        </div>
+      </SidebarInset>
+    );
+  }
 
   return (
     <SidebarInset>
@@ -360,63 +133,6 @@ export default function ProductsPage() {
         </h1>
       </header>
       <div className="flex flex-1 flex-col gap-6 p-6 bg-gradient-to-br from-purple-50 to-violet-100 dark:from-gray-900 dark:to-gray-800">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-violet-600 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">
-                Tổng sản phẩm
-              </CardTitle>
-              <Eye className="h-5 w-5 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalProducts}</div>
-              <p className="text-xs opacity-80">Đang theo dõi</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">
-                Đang hoạt động
-              </CardTitle>
-              <TrendingUp className="h-5 w-5 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{activeProducts}</div>
-              <p className="text-xs opacity-80">Sản phẩm active</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-500 to-pink-600 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">
-                Hết hàng
-              </CardTitle>
-              <TrendingDown className="h-5 w-5 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{outOfStock}</div>
-              <p className="text-xs opacity-80">Cần bổ sung</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-cyan-600 text-white">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">
-                Tổng doanh thu
-              </CardTitle>
-              <TrendingUp className="h-5 w-5 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                ${totalRevenue.toLocaleString()}
-              </div>
-              <p className="text-xs opacity-80">Từ tất cả sản phẩm</p>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Main Table */}
         <Card className="border-0 shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <CardHeader>
@@ -425,25 +141,103 @@ export default function ProductsPage() {
                 <CardTitle className="text-gray-900 dark:text-gray-100">
                   Danh sách sản phẩm
                 </CardTitle>
-                <CardDescription>
-                  Theo dõi và quản lý sản phẩm theo tài khoản. Sử dụng search và
-                  filter để tìm kiếm dữ liệu.
-                </CardDescription>
+                {selectedCount > 0 && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Đã chọn {selectedCount} sản phẩm
+                  </p>
+                )}
               </div>
-              <Button className="bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Thêm sản phẩm
-              </Button>
+              <div className="flex gap-2">
+                {selectedCount > 0 && (
+                  <Button
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-2"
+                  >
+                    Xóa ({selectedCount})
+                  </Button>
+                )}
+                <ProductDialog
+                  isOpen={isDialogOpen}
+                  onOpenChange={setIsDialogOpen}
+                  editingProduct={editingProduct}
+                  onAddClick={handleAddClick}
+                  onSubmit={handleSubmit}
+                />
+              </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <AdvancedTable
-              data={data}
-              columns={columns}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onExport={handleExport}
-              searchPlaceholder="Tìm kiếm sản phẩm..."
+          <CardContent className="w-full">
+            {/* Search Bar */}
+            <div className="relative mb-6">
+              <div className="relative group max-w-md">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                <div className="relative bg-white/90 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg shadow-purple-500/10">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4 z-10 group-hover:text-purple-500 transition-colors duration-200" />
+                  <Input
+                    placeholder="Tìm kiếm sản phẩm..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9 pr-9 py-2 h-10 text-sm border-0 bg-transparent focus:ring-0 focus:outline-none placeholder:text-gray-400 group-hover:placeholder:text-gray-500 transition-all duration-200"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors duration-200 hover:scale-110"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {debouncedSearch !== search && (
+                <div className="absolute -right-1 top-1/2 transform -translate-y-1/2">
+                  <div className="bg-purple-500 text-white rounded-full p-0.5 shadow-lg">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* DataGrid Table with horizontal scroll */}
+            <Box
+              sx={{
+                height: "calc(100vh - 400px)",
+                width: "100%",
+              }}
+            >
+              <DataGrid
+                rows={products}
+                columns={columns}
+                getRowId={(row) => row._id}
+                rowHeight={80}
+                checkboxSelection
+                disableRowSelectionOnClick
+                onRowSelectionModelChange={(newSelectionModel) => {
+                  setSelectedRows(newSelectionModel);
+                }}
+                rowSelectionModel={selectedRows}
+                hideFooter={true}
+                sx={{
+                  "& .MuiDataGrid-cell": {
+                    borderBottom: "1px solid #e5e7eb",
+                  },
+                  "& .MuiDataGrid-columnHeaders": {
+                    backgroundColor: "#f9fafb",
+                    borderBottom: "2px solid #e5e7eb",
+                  },
+                  "& .MuiDataGrid-row:hover": {
+                    backgroundColor: "#f3f4f6",
+                  },
+                }}
+              />
+            </Box>
+            <Pagination
+              className="mt-4"
+              currentPage={page}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              totalPages={totalPages}
+              onPageChange={(page) => setPage(page)}
             />
           </CardContent>
         </Card>

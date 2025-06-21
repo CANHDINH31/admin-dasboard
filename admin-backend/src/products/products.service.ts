@@ -17,8 +17,42 @@ export class ProductsService {
     return createdProduct.save();
   }
 
-  async findAll(): Promise<Product[]> {
-    return this.productModel.find().exec();
+  async findAll(
+    page: number = 1,
+    limit: number = 25,
+    search?: string,
+  ): Promise<{
+    data: Product[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    const query: any = {};
+    if (search) {
+      query.$or = [
+        { sku: { $regex: search, $options: 'i' } },
+        { upc: { $regex: search, $options: 'i' } },
+        { wmid: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } },
+      ];
+    }
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.productModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      this.productModel.countDocuments(query).exec(),
+    ]);
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string): Promise<Product> {

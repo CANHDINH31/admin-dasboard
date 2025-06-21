@@ -11,6 +11,8 @@ import { AuthModule } from './auth/auth.module';
 import { SeedsModule } from './users/seeds/seeds.module';
 import { SeedCommand } from './users/seeds/seed.command';
 import { AccountsSeedsModule } from './accounts/seeds/seeds.module';
+import { ProductSeedsModule } from './products/seeds/seeds.module';
+import { ProductSeedCommand } from './products/seeds/seed.command';
 
 @Module({
   imports: [
@@ -29,7 +31,8 @@ import { AccountsSeedsModule } from './accounts/seeds/seeds.module';
     AuthModule,
     SeedsModule,
     AccountsSeedsModule,
+    ProductSeedsModule,
   ],
-  providers: [SeedCommand],
+  providers: [SeedCommand, ProductSeedCommand],
 })
 export class AppModule {}
