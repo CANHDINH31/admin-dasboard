@@ -25,6 +25,7 @@ export default function ProductsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
@@ -34,7 +35,7 @@ export default function ProductsPage() {
     data: productsResponse,
     isLoading,
     error,
-  } = useProducts({ page, search: debouncedSearch });
+  } = useProducts({ page, limit: itemsPerPage, search: debouncedSearch });
   const deleteProductMutation = useDeleteProduct();
   const bulkDeleteMutation = useBulkDeleteProducts();
   const createProductMutation = useCreateProduct();
@@ -43,7 +44,6 @@ export default function ProductsPage() {
   const products = productsResponse?.data?.data || [];
   const meta = productsResponse?.data?.meta;
   const totalPages = meta?.totalPages || 1;
-  const itemsPerPage = meta?.limit || 10;
   const totalItems = meta?.total || 0;
 
   const getSelectedIds = () => {
@@ -237,6 +237,10 @@ export default function ProductsPage() {
               totalItems={totalItems}
               itemsPerPage={itemsPerPage}
               totalPages={totalPages}
+              onItemsPerPageChange={(itemsPerPage) => {
+                setItemsPerPage(itemsPerPage);
+                setPage(1);
+              }}
               onPageChange={(page) => setPage(page)}
             />
           </CardContent>

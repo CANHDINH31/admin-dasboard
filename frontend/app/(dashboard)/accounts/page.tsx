@@ -23,6 +23,7 @@ export default function AccountsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
@@ -32,14 +33,13 @@ export default function AccountsPage() {
     data: accountsResponse,
     isLoading,
     error,
-  } = useAccounts({ page, search: debouncedSearch });
+  } = useAccounts({ page, limit: itemsPerPage, search: debouncedSearch });
   const deleteAccountMutation = useDeleteAccount();
   const bulkDeleteMutation = useBulkDeleteAccounts();
 
   const accounts = accountsResponse?.data?.data || [];
   const meta = accountsResponse?.data?.meta;
   const totalPages = meta?.totalPages || 1;
-  const itemsPerPage = meta?.limit || 10;
   const totalItems = meta?.total || 0;
 
   const getSelectedIds = () => {
@@ -219,6 +219,10 @@ export default function AccountsPage() {
               totalItems={totalItems}
               itemsPerPage={itemsPerPage}
               totalPages={totalPages}
+              onItemsPerPageChange={(itemsPerPage) => {
+                setItemsPerPage(itemsPerPage);
+                setPage(1);
+              }}
               onPageChange={(page) => setPage(page)}
             />
           </CardContent>

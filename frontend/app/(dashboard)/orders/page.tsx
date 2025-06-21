@@ -25,6 +25,7 @@ export default function OrdersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
@@ -34,7 +35,7 @@ export default function OrdersPage() {
     data: ordersResponse,
     isLoading,
     error,
-  } = useOrders({ page, search: debouncedSearch });
+  } = useOrders({ page, limit: itemsPerPage, search: debouncedSearch });
   const deleteOrderMutation = useDeleteOrder();
   const bulkDeleteMutation = useBulkDeleteOrders();
   const createOrderMutation = useCreateOrder();
@@ -43,7 +44,6 @@ export default function OrdersPage() {
   const orders = ordersResponse?.data?.data || [];
   const meta = ordersResponse?.data?.meta;
   const totalPages = meta?.totalPages || 1;
-  const itemsPerPage = meta?.limit || 10;
   const totalItems = meta?.total || 0;
 
   const getSelectedIds = () => {
@@ -237,6 +237,10 @@ export default function OrdersPage() {
               totalItems={totalItems}
               itemsPerPage={itemsPerPage}
               totalPages={totalPages}
+              onItemsPerPageChange={(itemsPerPage) => {
+                setItemsPerPage(itemsPerPage);
+                setPage(1);
+              }}
               onPageChange={(page) => setPage(page)}
             />
           </CardContent>
