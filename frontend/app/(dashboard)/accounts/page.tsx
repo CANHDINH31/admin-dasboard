@@ -6,96 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Box } from "@mui/material";
 import { DataGrid, GridRowSelectionModel } from "@mui/x-data-grid";
 import { Pagination } from "@/components/ui/pagination";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { AccountDialog } from "@/components/accounts/AccountDialog";
 import { getAccountColumns } from "@/components/accounts/accountColumns";
-import { AccountStats } from "@/components/accounts/AccountStats";
-
-interface Account {
-  id: string;
-  marketplace: string;
-  accName: string;
-  profileName: string;
-  sheetID: string;
-  accountInfo: string;
-  proxy: string;
-  clientID: string;
-  clientSecret: string;
-  telegramId: string;
-  status: "active" | "inactive" | "suspended";
-  createdAt: string;
-  lastSync: string;
-}
-
-const mockAccounts: Account[] = [
-  {
-    id: "1",
-    marketplace: "eBay",
-    accName: "ebay_store_01",
-    profileName: "Main Store",
-    sheetID: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
-    accountInfo: "Active seller account",
-    proxy: "192.168.1.100:8080",
-    clientID: "client_123",
-    clientSecret: "secret_456",
-    telegramId: "@store_bot",
-    status: "active",
-    createdAt: "2024-01-15",
-    lastSync: "2024-01-20 10:30:00",
-  },
-  {
-    id: "2",
-    marketplace: "Amazon",
-    accName: "amz_seller_02",
-    profileName: "Electronics Store",
-    sheetID: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
-    accountInfo: "Professional seller",
-    proxy: "192.168.1.101:8080",
-    clientID: "client_789",
-    clientSecret: "secret_012",
-    telegramId: "@electronics_bot",
-    status: "active",
-    createdAt: "2024-01-10",
-    lastSync: "2024-01-20 09:15:00",
-  },
-  {
-    id: "3",
-    marketplace: "Walmart",
-    accName: "walmart_seller_03",
-    profileName: "Home & Garden",
-    sheetID: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
-    accountInfo: "New seller account",
-    proxy: "192.168.1.102:8080",
-    clientID: "client_456",
-    clientSecret: "secret_789",
-    telegramId: "@garden_bot",
-    status: "inactive",
-    createdAt: "2024-01-05",
-    lastSync: "2024-01-18 14:20:00",
-  },
-  {
-    id: "4",
-    marketplace: "eBay",
-    accName: "ebay_store_04",
-    profileName: "Fashion Store",
-    sheetID: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
-    accountInfo: "Premium seller",
-    proxy: "192.168.1.103:8080",
-    clientID: "client_111",
-    clientSecret: "secret_222",
-    telegramId: "@fashion_bot",
-    status: "suspended",
-    createdAt: "2024-01-01",
-    lastSync: "2024-01-15 16:45:00",
-  },
-];
+import {
+  useAccounts,
+  useDeleteAccount,
+  useBulkDeleteAccounts,
+  Account,
+} from "@/lib/hooks/useAccounts";
 
 export default function AccountsPage() {
-  const [data, setData] = useState<Account[]>(mockAccounts);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState(null);
   const [page, setPage] = useState(1);
@@ -103,19 +27,20 @@ export default function AccountsPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
 
-  const itemsPerPage = 10;
-  const totalItems = data.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const pagedData = data
-    .filter((row) => {
-      if (!debouncedSearch) return true;
-      return (
-        row.accName.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        row.marketplace.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        row.profileName.toLowerCase().includes(debouncedSearch.toLowerCase())
-      );
-    })
-    .slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  // API hooks
+  const {
+    data: accountsResponse,
+    isLoading,
+    error,
+  } = useAccounts({ page, search: debouncedSearch });
+  const deleteAccountMutation = useDeleteAccount();
+  const bulkDeleteMutation = useBulkDeleteAccounts();
+
+  const accounts = accountsResponse?.data?.data || [];
+  const meta = accountsResponse?.data?.meta;
+  const totalPages = meta?.totalPages || 1;
+  const itemsPerPage = meta?.limit || 10;
+  const totalItems = meta?.total || 0;
 
   const getSelectedIds = () => {
     if (!selectedRows || !selectedRows.ids) return [];
@@ -131,18 +56,22 @@ export default function AccountsPage() {
 
   const handleDelete = (account: any) => {
     if (confirm(`Bạn có chắc muốn xóa tài khoản ${account.accName}?`)) {
-      setData((prev) => prev.filter((item) => item.id !== account.id));
+      deleteAccountMutation.mutate(account.id);
     }
   };
 
   const handleBulkDelete = () => {
     if (selectedCount === 0) return;
-    const selectedAccounts = data.filter((acc) => selectedIds.includes(acc.id));
-    const accNames = selectedAccounts.map((acc) => acc.accName).join(", ");
+    const selectedAccounts = accounts.filter((acc: Account) =>
+      selectedIds.includes(acc._id)
+    );
+    const accNames = selectedAccounts
+      .map((acc: Account) => acc.accName)
+      .join(", ");
     if (
       confirm(`Bạn có chắc muốn xóa ${selectedCount} tài khoản: ${accNames}?`)
     ) {
-      setData((prev) => prev.filter((item) => !selectedIds.includes(item.id)));
+      bulkDeleteMutation.mutate(selectedIds.map((id) => id.toString()));
       setSelectedRows(undefined);
     }
   };
@@ -157,6 +86,26 @@ export default function AccountsPage() {
     onEdit: handleEdit,
     onDelete: handleDelete,
   });
+
+  if (isLoading) {
+    return (
+      <SidebarInset>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </SidebarInset>
+    );
+  }
+
+  if (error) {
+    return (
+      <SidebarInset>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-red-500">Error loading accounts</div>
+        </div>
+      </SidebarInset>
+    );
+  }
 
   return (
     <SidebarInset>
@@ -200,7 +149,8 @@ export default function AccountsPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="w-full">
+            aaa
             {/* Search Bar */}
             <div className="relative mb-6">
               <div className="relative group max-w-md">
@@ -231,11 +181,18 @@ export default function AccountsPage() {
                 </div>
               )}
             </div>
-            <Box sx={{ height: "calc(100vh - 280px)", width: "100%" }}>
+            {/* DataGrid Table with horizontal scroll */}
+            <Box
+              sx={{
+                height: "calc(100vh - 280px)",
+                // maxWidth: "70vw",
+              }}
+            >
+              bbb
               <DataGrid
-                rows={pagedData}
+                rows={accounts}
                 columns={columns}
-                getRowId={(row) => row.id}
+                getRowId={(row) => row._id}
                 rowHeight={80}
                 checkboxSelection
                 disableRowSelectionOnClick

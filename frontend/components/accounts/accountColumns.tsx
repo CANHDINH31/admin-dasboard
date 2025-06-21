@@ -1,5 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { GridColDef, GridActionsCellItem } from "@mui/x-data-grid";
+import { Account } from "@/lib/hooks/useAccounts";
 
 const getMarketplaceBadge = (marketplace: string) => {
   const colors = {
@@ -25,18 +27,26 @@ const getStatusBadge = (status: string) => {
   );
 };
 
-export const getAccountColumns = ({ onEdit, onDelete }: any) => [
+interface AccountColumnsProps {
+  onEdit: (account: Account) => void;
+  onDelete: (account: Account) => void;
+}
+
+export const getAccountColumns = ({
+  onEdit,
+  onDelete,
+}: AccountColumnsProps): GridColDef<Account>[] => [
   {
     field: "marketplace",
     headerName: "Marketplace",
     width: 120,
-    renderCell: (params: any) => getMarketplaceBadge(params.value),
+    renderCell: (params) => getMarketplaceBadge(params.value),
   },
   {
     field: "accName",
     headerName: "Tên tài khoản",
     width: 180,
-    renderCell: (params: any) => (
+    renderCell: (params) => (
       <span className="font-semibold">{params.value}</span>
     ),
   },
@@ -44,13 +54,26 @@ export const getAccountColumns = ({ onEdit, onDelete }: any) => [
     field: "profileName",
     headerName: "Profile Name",
     width: 140,
+    renderCell: (params) => (
+      <span className="truncate block max-w-[120px]">{params.value}</span>
+    ),
+  },
+  {
+    field: "sheetID",
+    headerName: "Sheet ID",
+    width: 140,
+    renderCell: (params) => (
+      <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded truncate block max-w-[120px]">
+        {params.value}
+      </code>
+    ),
   },
   {
     field: "accountInfo",
     headerName: "Thông tin",
     width: 180,
-    renderCell: (params: any) => (
-      <span className="text-sm text-gray-600 truncate max-w-32 block">
+    renderCell: (params) => (
+      <span className="text-sm text-gray-600 truncate max-w-[140px] block">
         {params.value}
       </span>
     ),
@@ -59,25 +82,54 @@ export const getAccountColumns = ({ onEdit, onDelete }: any) => [
     field: "proxy",
     headerName: "Proxy",
     width: 120,
-    renderCell: (params: any) => (
-      <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">
+    renderCell: (params) => (
+      <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded truncate block max-w-[100px]">
         {params.value}
       </code>
     ),
   },
   {
+    field: "clientID",
+    headerName: "Client ID",
+    width: 140,
+    renderCell: (params) => (
+      <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded truncate block max-w-[120px]">
+        {params.value}
+      </code>
+    ),
+  },
+  {
+    field: "clientSecret",
+    headerName: "Client Secret",
+    width: 140,
+    renderCell: (params) => {
+      const value = params.value || "";
+      const masked =
+        value.length > 4
+          ? "*".repeat(value.length - 4) + value.slice(-4)
+          : value;
+      return (
+        <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded truncate block max-w-[120px]">
+          {masked}
+        </code>
+      );
+    },
+  },
+  {
     field: "telegramId",
-    headerName: "Telegram",
+    headerName: "Telegram ID",
     width: 120,
-    renderCell: (params: any) => (
-      <span className="text-blue-600 dark:text-blue-400">{params.value}</span>
+    renderCell: (params) => (
+      <span className="text-blue-600 dark:text-blue-400 truncate block max-w-[100px]">
+        {params.value}
+      </span>
     ),
   },
   {
     field: "status",
     headerName: "Trạng thái",
     width: 120,
-    renderCell: (params: any) => getStatusBadge(params.value),
+    renderCell: (params) => getStatusBadge(params.value),
   },
   {
     field: "createdAt",
@@ -94,37 +146,29 @@ export const getAccountColumns = ({ onEdit, onDelete }: any) => [
     type: "actions",
     headerName: "Thao tác",
     width: 120,
-    getActions: (params: any) => [
-      <Button
-        size="sm"
-        variant="outline"
+    getActions: (params) => [
+      <GridActionsCellItem
+        icon={
+          <Button size="sm" variant="outline">
+            Sửa
+          </Button>
+        }
+        label="Sửa"
         onClick={() => onEdit(params.row)}
         key="edit"
-      >
-        Sửa
-      </Button>,
-      <Button
-        size="sm"
-        variant="destructive"
+        showInMenu={false}
+      />,
+      <GridActionsCellItem
+        icon={
+          <Button size="sm" variant="destructive">
+            Xóa
+          </Button>
+        }
+        label="Xóa"
         onClick={() => onDelete(params.row)}
         key="delete"
-      >
-        Xóa
-      </Button>,
+        showInMenu={false}
+      />,
     ],
-    renderCell: (params: any) => (
-      <div className="flex gap-2">
-        <Button size="sm" variant="outline" onClick={() => onEdit(params.row)}>
-          Sửa
-        </Button>
-        <Button
-          size="sm"
-          variant="destructive"
-          onClick={() => onDelete(params.row)}
-        >
-          Xóa
-        </Button>
-      </div>
-    ),
   },
 ];
