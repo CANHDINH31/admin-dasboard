@@ -42,8 +42,9 @@ export default function LoginPage() {
       // Store token in cookie with js-cookie
       Cookies.set("user", JSON.stringify(data._doc), {
         expires: 7, // Cookie sẽ hết hạn sau 7 ngày
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict", // Bảo vệ chống CSRF
+        secure: false, // Tắt secure để cho phép HTTP
+        sameSite: "lax", // Thay đổi từ strict sang lax để linh hoạt hơn
+        path: "/", // Đảm bảo cookie có sẵn trên toàn bộ domain
       });
       toast.success("Đăng nhập thành công");
       router.push("/");
