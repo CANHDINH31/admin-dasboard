@@ -42,7 +42,7 @@ export default function LoginPage() {
       // Store token in cookie with js-cookie
       Cookies.set("user", JSON.stringify(data._doc), {
         expires: 7, // Cookie sẽ hết hạn sau 7 ngày
-        secure: process.env.NODE_ENV === "production", // Chỉ gửi cookie qua HTTPS trong môi trường production
+        secure: process.env.NODE_ENV === "production",
         sameSite: "strict", // Bảo vệ chống CSRF
       });
       toast.success("Đăng nhập thành công");
@@ -59,10 +59,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
-
       <Card className="w-full max-w-md shadow-2xl border-0 bg-card">
         <CardHeader className="space-y-1 text-center">
           <div className="flex items-center justify-center mb-4">

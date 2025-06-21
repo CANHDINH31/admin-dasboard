@@ -135,7 +135,6 @@ export default function AppSidebar() {
               </div>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              <ThemeToggle />
               <Button
                 variant="ghost"
                 size="icon"
