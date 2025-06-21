@@ -27,6 +27,17 @@ const getStatusBadge = (status: string) => {
   );
 };
 
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 interface AccountColumnsProps {
   onEdit: (account: Account) => void;
   onDelete: (account: Account) => void;
@@ -109,6 +120,9 @@ export const getAccountColumns = ({
     field: "createdAt",
     headerName: "Ngày tạo",
     width: 110,
+    renderCell: (params) => (
+      <span className="text-sm">{formatDate(params.value)}</span>
+    ),
   },
 
   {

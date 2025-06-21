@@ -37,7 +37,9 @@ export class OrdersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all orders with pagination and search' })
+  @ApiOperation({
+    summary: 'Get all orders with pagination and comprehensive filtering',
+  })
   @ApiResponse({ status: 200, description: 'Orders retrieved successfully' })
   @ApiQuery({
     name: 'page',
@@ -54,15 +56,67 @@ export class OrdersController {
   @ApiQuery({
     name: 'search',
     required: false,
-    description:
-      'Search term for order number, PO number, SKU, or tracking number',
+    description: 'Search term for PO number or Name',
+  })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    description: 'Filter by order date start (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    description: 'Filter by order date end (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'account',
+    required: false,
+    description: 'Filter by account (orderNumEmail)',
+  })
+  @ApiQuery({
+    name: 'trackingStatus',
+    required: false,
+    description: 'Filter by tracking status',
+  })
+  @ApiQuery({
+    name: 'sku',
+    required: false,
+    description: 'Filter by SKU',
+  })
+  @ApiQuery({
+    name: 'shipByStart',
+    required: false,
+    description: 'Filter by ship by date start (YYYY-MM-DD)',
+  })
+  @ApiQuery({
+    name: 'shipByEnd',
+    required: false,
+    description: 'Filter by ship by date end (YYYY-MM-DD)',
   })
   findAll(
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 25,
     @Query('search') search?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('account') account?: string,
+    @Query('trackingStatus') trackingStatus?: string,
+    @Query('sku') sku?: string,
+    @Query('shipByStart') shipByStart?: string,
+    @Query('shipByEnd') shipByEnd?: string,
   ) {
-    return this.ordersService.findAll(Number(page), Number(limit), search);
+    return this.ordersService.findAll(
+      Number(page),
+      Number(limit),
+      search,
+      startDate,
+      endDate,
+      account,
+      trackingStatus,
+      sku,
+      shipByStart,
+      shipByEnd,
+    );
   }
 
   @Get('filter/order-number')

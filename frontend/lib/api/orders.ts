@@ -56,8 +56,18 @@ export interface OrdersResponse {
 }
 
 export const ordersApi = {
-  getAll: (params?: { page?: number; limit?: number; search?: string }) =>
-    axiosInstance.get<OrdersResponse>("/orders", { params }),
+  getAll: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    startDate?: string;
+    endDate?: string;
+    account?: string;
+    trackingStatus?: string;
+    sku?: string;
+    shipByStart?: string;
+    shipByEnd?: string;
+  }) => axiosInstance.get<OrdersResponse>("/orders", { params }),
   getById: (id: string) => axiosInstance.get<Order>(`/orders/${id}`),
   create: (data: CreateOrderDto) => axiosInstance.post<Order>("/orders", data),
   update: (id: string, data: UpdateOrderDto) =>

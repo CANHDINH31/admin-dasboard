@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, X } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Search, X, Filter, Calendar } from "lucide-react";
 import { Box } from "@mui/material";
 import { DataGrid, GridRowSelectionModel } from "@mui/x-data-grid";
 import { Pagination } from "@/components/ui/pagination";
@@ -27,7 +35,19 @@ export default function OrdersPage() {
   const [page, setPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>();
+
+  // Filter states
   const [search, setSearch] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [account, setAccount] = useState("");
+  const [trackingStatus, setTrackingStatus] = useState("all");
+  const [sku, setSku] = useState("");
+  const [shipByStart, setShipByStart] = useState("");
+  const [shipByEnd, setShipByEnd] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Debounced search
   const debouncedSearch = useDebounce(search, 500);
 
   // API hooks
@@ -35,7 +55,19 @@ export default function OrdersPage() {
     data: ordersResponse,
     isLoading,
     error,
-  } = useOrders({ page, limit: itemsPerPage, search: debouncedSearch });
+  } = useOrders({
+    page,
+    limit: itemsPerPage,
+    search: debouncedSearch,
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    account: account || undefined,
+    trackingStatus: trackingStatus !== "all" ? trackingStatus : undefined,
+    sku: sku || undefined,
+    shipByStart: shipByStart || undefined,
+    shipByEnd: shipByEnd || undefined,
+  });
+
   const deleteOrderMutation = useDeleteOrder();
   const bulkDeleteMutation = useBulkDeleteOrders();
   const createOrderMutation = useCreateOrder();
@@ -97,6 +129,28 @@ export default function OrdersPage() {
       createOrderMutation.mutate(data as any);
     }
   };
+
+  const clearFilters = () => {
+    setSearch("");
+    setStartDate("");
+    setEndDate("");
+    setAccount("");
+    setTrackingStatus("all");
+    setSku("");
+    setShipByStart("");
+    setShipByEnd("");
+    setPage(1);
+  };
+
+  const hasActiveFilters =
+    search ||
+    startDate ||
+    endDate ||
+    account ||
+    (trackingStatus && trackingStatus !== "all") ||
+    sku ||
+    shipByStart ||
+    shipByEnd;
 
   // Columns cho DataGrid
   const columns = getOrderColumns({
@@ -168,36 +222,164 @@ export default function OrdersPage() {
             </div>
           </CardHeader>
           <CardContent className="w-full">
-            {/* Search Bar */}
-            <div className="relative mb-6">
-              <div className="relative group max-w-md">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
-                <div className="relative bg-white/90 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg shadow-purple-500/10">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4 z-10 group-hover:text-purple-500 transition-colors duration-200" />
-                  <Input
-                    placeholder="Tìm kiếm đơn hàng..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9 pr-9 py-2 h-10 text-sm border-0 bg-transparent focus:ring-0 focus:outline-none placeholder:text-gray-400 group-hover:placeholder:text-gray-500 transition-all duration-200"
-                  />
-                  {search && (
-                    <button
-                      onClick={() => setSearch("")}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors duration-200 hover:scale-110"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
+            {/* Search and Filter Section */}
+            <div className="space-y-4 mb-6">
+              {/* Search Bar */}
+              <div className="relative">
+                <div className="relative group max-w-md">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                  <div className="relative bg-white/90 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg shadow-purple-500/10">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4 z-10 group-hover:text-purple-500 transition-colors duration-200" />
+                    <Input
+                      placeholder="Tìm kiếm theo PO# hoặc tên sản phẩm..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-9 pr-9 py-2 h-10 text-sm border-0 bg-transparent focus:ring-0 focus:outline-none placeholder:text-gray-400 group-hover:placeholder:text-gray-500 transition-all duration-200"
+                    />
+                    {search && (
+                      <button
+                        onClick={() => setSearch("")}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors duration-200 hover:scale-110"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
+                {debouncedSearch !== search && (
+                  <div className="absolute -right-1 top-1/2 transform -translate-y-1/2">
+                    <div className="bg-purple-500 text-white rounded-full p-0.5 shadow-lg">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    </div>
+                  </div>
+                )}
               </div>
-              {debouncedSearch !== search && (
-                <div className="absolute -right-1 top-1/2 transform -translate-y-1/2">
-                  <div className="bg-purple-500 text-white rounded-full p-0.5 shadow-lg">
-                    <Loader2 className="h-3 w-3 animate-spin" />
+
+              {/* Filter Toggle Button */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-2"
+                >
+                  <Filter className="h-4 w-4" />
+                  Bộ lọc
+                  {hasActiveFilters && (
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  )}
+                </Button>
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Xóa bộ lọc
+                  </Button>
+                )}
+              </div>
+
+              {/* Filter Panel */}
+              {showFilters && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                  {/* Date Range Filter */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      Thời gian đặt hàng
+                    </Label>
+                    <div className="space-y-2">
+                      <Input
+                        type="date"
+                        placeholder="Từ ngày"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="text-sm"
+                      />
+                      <Input
+                        type="date"
+                        placeholder="Đến ngày"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Account Filter */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Tài khoản</Label>
+                    <Input
+                      placeholder="Email tài khoản"
+                      value={account}
+                      onChange={(e) => setAccount(e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* Tracking Status Filter */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Trạng thái giao hàng
+                    </Label>
+                    <Select
+                      value={trackingStatus}
+                      onValueChange={setTrackingStatus}
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Chọn trạng thái" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tất cả</SelectItem>
+                        <SelectItem value="pending">Chờ xử lý</SelectItem>
+                        <SelectItem value="processing">Đang xử lý</SelectItem>
+                        <SelectItem value="shipped">Đã giao hàng</SelectItem>
+                        <SelectItem value="delivered">Đã nhận hàng</SelectItem>
+                        <SelectItem value="cancelled">Đã hủy</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* SKU Filter */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">SKU</Label>
+                    <Input
+                      placeholder="Mã SKU"
+                      value={sku}
+                      onChange={(e) => setSku(e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+
+                  {/* Ship By Date Range Filter */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      Thời gian giao hàng
+                    </Label>
+                    <div className="space-y-2">
+                      <Input
+                        type="date"
+                        placeholder="Từ ngày"
+                        value={shipByStart}
+                        onChange={(e) => setShipByStart(e.target.value)}
+                        className="text-sm"
+                      />
+                      <Input
+                        type="date"
+                        placeholder="Đến ngày"
+                        value={shipByEnd}
+                        onChange={(e) => setShipByEnd(e.target.value)}
+                        className="text-sm"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
             </div>
+
             {/* DataGrid Table with horizontal scroll */}
             <Box
               sx={{

@@ -39,19 +39,64 @@ export class OrdersService {
     page: number = 1,
     limit: number = 25,
     search?: string,
+    startDate?: string,
+    endDate?: string,
+    account?: string,
+    trackingStatus?: string,
+    sku?: string,
+    shipByStart?: string,
+    shipByEnd?: string,
   ): Promise<{
     data: Order[];
     meta: { total: number; page: number; limit: number; totalPages: number };
   }> {
     const query: any = {};
+
+    // Search filter for PO# and Name
     if (search) {
       query.$or = [
-        { orderNumber: { $regex: search, $options: 'i' } },
         { poNumber: { $regex: search, $options: 'i' } },
-        { sku: { $regex: search, $options: 'i' } },
-        { trackingNumber: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } },
       ];
     }
+
+    // Date range filter
+    if (startDate || endDate) {
+      query.orderDate = {};
+      if (startDate) {
+        query.orderDate.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.orderDate.$lte = new Date(endDate);
+      }
+    }
+
+    // Account filter
+    if (account) {
+      query.orderNumEmail = { $regex: account, $options: 'i' };
+    }
+
+    // Tracking status filter
+    if (trackingStatus) {
+      query.trackingStatus = { $regex: trackingStatus, $options: 'i' };
+    }
+
+    // SKU filter
+    if (sku) {
+      query.sku = { $regex: sku, $options: 'i' };
+    }
+
+    // Ship by date range filter
+    if (shipByStart || shipByEnd) {
+      query.shipBy = {};
+      if (shipByStart) {
+        query.shipBy.$gte = new Date(shipByStart);
+      }
+      if (shipByEnd) {
+        query.shipBy.$lte = new Date(shipByEnd);
+      }
+    }
+
     const skip = (page - 1) * limit;
     const [data, total] = await Promise.all([
       this.orderModel

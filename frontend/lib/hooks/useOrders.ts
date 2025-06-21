@@ -12,8 +12,18 @@ import { toast } from "sonner";
 export const orderKeys = {
   all: ["orders"] as const,
   lists: () => [...orderKeys.all, "list"] as const,
-  list: (params?: { page?: number; limit?: number; search?: string }) =>
-    [...orderKeys.lists(), params] as const,
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    startDate?: string;
+    endDate?: string;
+    account?: string;
+    trackingStatus?: string;
+    sku?: string;
+    shipByStart?: string;
+    shipByEnd?: string;
+  }) => [...orderKeys.lists(), params] as const,
   details: () => [...orderKeys.all, "detail"] as const,
   detail: (id: string) => [...orderKeys.details(), id] as const,
 };
@@ -23,6 +33,13 @@ export const useOrders = (params?: {
   page?: number;
   limit?: number;
   search?: string;
+  startDate?: string;
+  endDate?: string;
+  account?: string;
+  trackingStatus?: string;
+  sku?: string;
+  shipByStart?: string;
+  shipByEnd?: string;
 }) => {
   return useQuery({
     queryKey: orderKeys.list(params),
