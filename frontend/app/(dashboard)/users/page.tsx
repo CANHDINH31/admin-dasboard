@@ -26,6 +26,7 @@ export default function UsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>();
   const [search, setSearch] = useState("");
 
@@ -37,14 +38,13 @@ export default function UsersPage() {
     data: usersResponse,
     isLoading,
     error,
-  } = useUsers({ page, search: debouncedSearch });
+  } = useUsers({ page, limit: itemsPerPage, search: debouncedSearch });
   const deleteUserMutation = useDeleteUser();
   const bulkDeleteMutation = useBulkDeleteUsers();
 
   const users = usersResponse?.data?.data || [];
   const meta = usersResponse?.data?.meta;
   const totalPages = meta?.totalPages || 1;
-  const itemsPerPage = meta?.limit || 25;
   const totalItems = meta?.total || 0;
 
   // Helper function to get selected IDs as array
@@ -235,6 +235,10 @@ export default function UsersPage() {
               totalItems={totalItems}
               itemsPerPage={itemsPerPage}
               totalPages={totalPages}
+              onItemsPerPageChange={(itemsPerPage) => {
+                setItemsPerPage(itemsPerPage);
+                setPage(1);
+              }}
               onPageChange={(page) => setPage(page)}
             />
           </CardContent>

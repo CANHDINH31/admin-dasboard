@@ -2,6 +2,13 @@
 
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 interface PaginationProps {
@@ -10,6 +17,7 @@ interface PaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange: (itemsPerPage: number) => void;
   className?: string;
 }
 
@@ -19,10 +27,13 @@ export function Pagination({
   totalItems,
   itemsPerPage,
   onPageChange,
+  onItemsPerPageChange,
   className,
 }: PaginationProps) {
   const startItem = (currentPage - 1) * itemsPerPage + 1;
   const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+  const perPageOptions = [10, 25, 50, 100, 500, 1000];
 
   // Generate page numbers to show
   const getPageNumbers = () => {
@@ -69,9 +80,36 @@ export function Pagination({
 
   return (
     <div className={cn("flex items-center justify-between px-2", className)}>
-      <div className="flex-1 text-sm text-muted-foreground">
-        Hiển thị {startItem} đến {endItem} trong tổng số {totalItems} kết quả
+      <div className="flex items-center space-x-4">
+        <div className="flex-1 text-sm text-muted-foreground">
+          Hiển thị {startItem} đến {endItem} trong tổng số {totalItems} kết quả
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-muted-foreground">Hiển thị:</span>
+          <Select
+            value={itemsPerPage.toString()}
+            onValueChange={(value) => {
+              const newItemsPerPage = parseInt(value);
+              onItemsPerPageChange(newItemsPerPage);
+              // Reset to first page when changing items per page
+              onPageChange(1);
+            }}
+          >
+            <SelectTrigger className="w-20 h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {perPageOptions.map((option) => (
+                <SelectItem key={option} value={option.toString()}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
+
       <div className="flex items-center space-x-2">
         <Button
           variant="outline"
