@@ -184,6 +184,7 @@ export default function AccountsPage() {
             <Box
               sx={{
                 height: "calc(100vh - 280px)",
+                width: "100%",
               }}
             >
               <DataGrid
