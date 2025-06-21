@@ -1,56 +1,60 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import type { Document } from "mongoose"
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import type { Document } from 'mongoose';
 
-export type OrderDocument = Order & Document
+export type OrderDocument = Order & Document;
 
 @Schema({ timestamps: true })
 export class Order {
-  @Prop({ required: true, unique: true })
-  poNumber: string
+  @Prop({ required: true })
+  trackingStatus: string;
 
   @Prop({ required: true })
-  customerName: string
+  orderNumEmail: string;
 
   @Prop({ required: true })
-  account: string
+  poNumber: string;
 
   @Prop({ required: true })
-  marketplace: string
+  orderNumber: string;
 
   @Prop({ required: true })
-  sku: string
-
-  @Prop({
-    required: true,
-    enum: ["Processing", "Shipped", "Delivered", "Cancelled"],
-    default: "Processing",
-  })
-  status: string
-
-  @Prop({
-    required: true,
-    enum: ["In Transit", "Delivered", "Pending", "Lost"],
-    default: "Pending",
-  })
-  trackingStatus: string
+  orderDate: Date;
 
   @Prop({ required: true })
-  shipBy: string
+  shipBy: Date;
+
+  @Prop({ required: true })
+  customerShippingAddress: string;
 
   @Prop({ required: true, type: Number })
-  amount: number
+  quantity: number;
 
   @Prop({ required: true })
-  orderDate: Date
+  sku: string;
+
+  @Prop({ required: true, type: Number })
+  sellingPrice: number;
+
+  @Prop({ required: true, type: Number })
+  sourcingPrice: number;
+
+  @Prop({ type: Number })
+  walmartFee?: number;
+
+  @Prop({ type: Number })
+  netProfit?: number;
+
+  @Prop({ type: Number })
+  roi?: number;
+
+  @Prop({ type: Number })
+  commission?: number;
 
   @Prop()
-  trackingNumber?: string
+  upc?: string;
 
   @Prop()
-  shippingAddress?: string
-
-  @Prop({ type: Object })
-  metadata?: Record<string, any>
+  name?: string;
 }
 
-export const OrderSchema = SchemaFactory.createForClass(Order)
+export const OrderSchema = SchemaFactory.createForClass(Order);

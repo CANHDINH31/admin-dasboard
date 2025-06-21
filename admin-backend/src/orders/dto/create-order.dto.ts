@@ -1,61 +1,167 @@
-import { ApiProperty } from "@nestjs/swagger"
-import { IsNotEmpty, IsOptional, IsEnum, IsNumber, IsDateString, Min } from "class-validator"
+import { ApiProperty } from '@nestjs/swagger';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsDateString,
+  Min,
+} from 'class-validator';
 
 export class CreateOrderDto {
-  @ApiProperty({ example: "PO-2024-001" })
+  @ApiProperty({
+    example: 'In Transit',
+    description: 'Tracking status of the order',
+  })
   @IsNotEmpty()
-  poNumber: string
-
-  @ApiProperty({ example: "Nguyễn Văn A" })
-  @IsNotEmpty()
-  customerName: string
-
-  @ApiProperty({ example: "ebay_store_01" })
-  @IsNotEmpty()
-  account: string
-
-  @ApiProperty({ example: "eBay" })
-  @IsNotEmpty()
-  marketplace: string
-
-  @ApiProperty({ example: "SKU001" })
-  @IsNotEmpty()
-  sku: string
+  @IsString()
+  trackingStatus: string;
 
   @ApiProperty({
-    example: "Processing",
-    enum: ["Processing", "Shipped", "Delivered", "Cancelled"],
+    example: 'order123@example.com',
+    description: 'Order number email',
   })
-  @IsEnum(["Processing", "Shipped", "Delivered", "Cancelled"])
-  @IsOptional()
-  status?: string
+  @IsNotEmpty()
+  @IsString()
+  orderNumEmail: string;
 
   @ApiProperty({
-    example: "Pending",
-    enum: ["In Transit", "Delivered", "Pending", "Lost"],
+    example: 'PO-2024-001',
+    description: 'Purchase order number',
   })
-  @IsEnum(["In Transit", "Delivered", "Pending", "Lost"])
-  @IsOptional()
-  trackingStatus?: string
-
-  @ApiProperty({ example: "FedEx" })
   @IsNotEmpty()
-  shipBy: string
+  @IsString()
+  poNumber: string;
 
-  @ApiProperty({ example: 1299 })
+  @ApiProperty({
+    example: 'ORD-2024-001',
+    description: 'Order number',
+  })
+  @IsNotEmpty()
+  @IsString()
+  orderNumber: string;
+
+  @ApiProperty({
+    example: '2024-01-15T00:00:00.000Z',
+    description: 'Order date',
+  })
+  @IsNotEmpty()
+  @IsDateString()
+  orderDate: Date;
+
+  @ApiProperty({
+    example: '2024-01-20T00:00:00.000Z',
+    description: 'Ship by date',
+  })
+  @IsNotEmpty()
+  @IsDateString()
+  shipBy: Date;
+
+  @ApiProperty({
+    example: '123 Main St, City, State 12345',
+    description: 'Customer shipping address',
+  })
+  @IsNotEmpty()
+  @IsString()
+  customerShippingAddress: string;
+
+  @ApiProperty({
+    example: 5,
+    description: 'Quantity ordered',
+    minimum: 1,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(1)
+  quantity: number;
+
+  @ApiProperty({
+    example: 'SKU001',
+    description: 'Stock keeping unit',
+  })
+  @IsNotEmpty()
+  @IsString()
+  sku: string;
+
+  @ApiProperty({
+    example: 29.99,
+    description: 'Selling price',
+    minimum: 0,
+  })
+  @IsNotEmpty()
   @IsNumber()
   @Min(0)
-  amount: number
+  sellingPrice: number;
 
-  @ApiProperty({ example: "2024-01-15T00:00:00.000Z" })
-  @IsDateString()
-  orderDate: Date
+  @ApiProperty({
+    example: 15.99,
+    description: 'Sourcing price',
+    minimum: 0,
+  })
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(0)
+  sourcingPrice: number;
 
-  @ApiProperty({ example: "TRK123456789", required: false })
+  @ApiProperty({
+    example: 2.99,
+    description: 'Walmart fee',
+    required: false,
+    minimum: 0,
+  })
   @IsOptional()
-  trackingNumber?: string
+  @IsNumber()
+  @Min(0)
+  walmartFee?: number;
 
-  @ApiProperty({ example: "123 Main St, City, Country", required: false })
+  @ApiProperty({
+    example: 11.01,
+    description: 'Net profit',
+    required: false,
+    minimum: 0,
+  })
   @IsOptional()
-  shippingAddress?: string
+  @IsNumber()
+  @Min(0)
+  netProfit?: number;
+
+  @ApiProperty({
+    example: 68.8,
+    description: 'Return on investment percentage',
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  roi?: number;
+
+  @ApiProperty({
+    example: 1.5,
+    description: 'Commission amount',
+    required: false,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  commission?: number;
+
+  @ApiProperty({
+    example: '123456789012',
+    description: 'Universal Product Code',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  upc?: string;
+
+  @ApiProperty({
+    example: 'Product Name',
+    description: 'Product name',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  name?: string;
 }

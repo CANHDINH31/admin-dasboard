@@ -1,281 +1,247 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
-import { Badge } from "@/components/ui/badge"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, Download, RefreshCw } from "lucide-react"
-import { format } from "date-fns"
-import { vi } from "date-fns/locale"
-
-interface Order {
-  id: string
-  poNumber: string
-  customerName: string
-  account: string
-  marketplace: string
-  sku: string
-  status: string
-  trackingStatus: string
-  shipBy: string
-  orderDate: Date
-  amount: number
-}
-
-const mockOrders: Order[] = [
-  {
-    id: "1",
-    poNumber: "PO-2024-001",
-    customerName: "Nguyễn Văn A",
-    account: "ebay_store_01",
-    marketplace: "eBay",
-    sku: "SKU001",
-    status: "Processing",
-    trackingStatus: "In Transit",
-    shipBy: "FedEx",
-    orderDate: new Date("2024-01-15"),
-    amount: 1299,
-  },
-  {
-    id: "2",
-    poNumber: "PO-2024-002",
-    customerName: "Trần Thị B",
-    account: "amz_seller_02",
-    marketplace: "Amazon",
-    sku: "SKU002",
-    status: "Shipped",
-    trackingStatus: "Delivered",
-    shipBy: "UPS",
-    orderDate: new Date("2024-01-14"),
-    amount: 999,
-  },
-]
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Input } from "@/components/ui/input";
+import { Loader2, Search, X } from "lucide-react";
+import { Box } from "@mui/material";
+import { DataGrid, GridRowSelectionModel } from "@mui/x-data-grid";
+import { Pagination } from "@/components/ui/pagination";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { OrderDialog } from "@/components/orders/OrderDialog";
+import { getOrderColumns } from "@/components/orders/orderColumns";
+import {
+  useOrders,
+  useDeleteOrder,
+  useBulkDeleteOrders,
+  useCreateOrder,
+  useUpdateOrder,
+  Order,
+} from "@/lib/hooks/useOrders";
 
 export default function OrdersPage() {
-  const [orders] = useState<Order[]>(mockOrders)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedAccount, setSelectedAccount] = useState<string>("all")
-  const [selectedStatus, setSelectedStatus] = useState<string>("all")
-  const [selectedTrackingStatus, setSelectedTrackingStatus] = useState<string>("all")
-  const [selectedShipBy, setSelectedShipBy] = useState<string>("all")
-  const [dateFrom, setDateFrom] = useState<Date>()
-  const [dateTo, setDateTo] = useState<Date>()
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [page, setPage] = useState(1);
+  const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>();
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
 
-  const getStatusBadge = (status: string) => {
-    const variants: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
-      Processing: "secondary",
-      Shipped: "default",
-      Delivered: "outline",
-      Cancelled: "destructive",
+  // API hooks
+  const {
+    data: ordersResponse,
+    isLoading,
+    error,
+  } = useOrders({ page, search: debouncedSearch });
+  const deleteOrderMutation = useDeleteOrder();
+  const bulkDeleteMutation = useBulkDeleteOrders();
+  const createOrderMutation = useCreateOrder();
+  const updateOrderMutation = useUpdateOrder();
+
+  const orders = ordersResponse?.data?.data || [];
+  const meta = ordersResponse?.data?.meta;
+  const totalPages = meta?.totalPages || 1;
+  const itemsPerPage = meta?.limit || 10;
+  const totalItems = meta?.total || 0;
+
+  const getSelectedIds = () => {
+    if (!selectedRows || !selectedRows.ids) return [];
+    return Array.from(selectedRows.ids);
+  };
+  const selectedIds = getSelectedIds();
+  const selectedCount = selectedIds.length;
+
+  const handleEdit = (order: Order) => {
+    setEditingOrder(order);
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (order: Order) => {
+    if (confirm(`Bạn có chắc muốn xóa đơn hàng ${order.orderNumber}?`)) {
+      deleteOrderMutation.mutate(order._id);
     }
-    return <Badge variant={variants[status] || "outline"}>{status}</Badge>
-  }
+  };
 
-  const getTrackingBadge = (status: string) => {
-    const variants: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
-      "In Transit": "secondary",
-      Delivered: "default",
-      Pending: "outline",
-      Lost: "destructive",
+  const handleBulkDelete = () => {
+    if (selectedCount === 0) return;
+    const selectedOrders = orders.filter((order: Order) =>
+      selectedIds.includes(order._id)
+    );
+    const orderNumbers = selectedOrders
+      .map((order: Order) => order.orderNumber)
+      .join(", ");
+    if (
+      confirm(
+        `Bạn có chắc muốn xóa ${selectedCount} đơn hàng: ${orderNumbers}?`
+      )
+    ) {
+      bulkDeleteMutation.mutate(selectedIds.map((id) => id.toString()));
+      setSelectedRows(undefined);
     }
-    return <Badge variant={variants[status] || "outline"}>{status}</Badge>
-  }
+  };
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      searchTerm === "" ||
-      order.poNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleAddClick = () => {
+    setEditingOrder(null);
+    setIsDialogOpen(true);
+  };
 
-    const matchesAccount = selectedAccount === "all" || order.account === selectedAccount
-    const matchesStatus = selectedStatus === "all" || order.status === selectedStatus
-    const matchesTrackingStatus = selectedTrackingStatus === "all" || order.trackingStatus === selectedTrackingStatus
-    const matchesShipBy = selectedShipBy === "all" || order.shipBy === selectedShipBy
+  const handleSubmit = (data: Partial<Order>) => {
+    if (editingOrder) {
+      updateOrderMutation.mutate({
+        id: editingOrder._id,
+        data,
+      });
+    } else {
+      createOrderMutation.mutate(data as any);
+    }
+  };
 
-    const matchesDateRange = (!dateFrom || order.orderDate >= dateFrom) && (!dateTo || order.orderDate <= dateTo)
+  // Columns cho DataGrid
+  const columns = getOrderColumns({
+    onEdit: handleEdit,
+    onDelete: handleDelete,
+  });
 
+  if (isLoading) {
     return (
-      matchesSearch && matchesAccount && matchesStatus && matchesTrackingStatus && matchesShipBy && matchesDateRange
-    )
-  })
+      <SidebarInset>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </SidebarInset>
+    );
+  }
+
+  if (error) {
+    return (
+      <SidebarInset>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-red-500">Error loading orders</div>
+        </div>
+      </SidebarInset>
+    );
+  }
 
   return (
     <SidebarInset>
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+      <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white dark:bg-gray-900 px-4">
         <SidebarTrigger className="-ml-1" />
-        <h1 className="text-xl font-semibold">Quản lý đơn hàng</h1>
+        <h1 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">
+          Quản lý đơn hàng
+        </h1>
       </header>
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        {/* Filters */}
-        <Card>
+      <div className="flex flex-1 flex-col gap-6 p-6 bg-gradient-to-br from-purple-50 to-violet-100 dark:from-gray-900 dark:to-gray-800">
+        {/* Main Table */}
+        <Card className="border-0 shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle>Bộ lọc</CardTitle>
-            <CardDescription>Lọc đơn hàng theo các tiêu chí</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tìm kiếm</label>
-                <Input
-                  placeholder="PO# hoặc tên khách hàng..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-gray-900 dark:text-gray-100">
+                  Danh sách đơn hàng
+                </CardTitle>
+                {selectedCount > 0 && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Đã chọn {selectedCount} đơn hàng
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                {selectedCount > 0 && (
+                  <Button
+                    variant="destructive"
+                    onClick={handleBulkDelete}
+                    className="flex items-center gap-2"
+                  >
+                    Xóa ({selectedCount})
+                  </Button>
+                )}
+                <OrderDialog
+                  isOpen={isDialogOpen}
+                  onOpenChange={setIsDialogOpen}
+                  editingOrder={editingOrder}
+                  onAddClick={handleAddClick}
+                  onSubmit={handleSubmit}
                 />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tài khoản</label>
-                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn tài khoản" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="ebay_store_01">ebay_store_01</SelectItem>
-                    <SelectItem value="amz_seller_02">amz_seller_02</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Trạng thái</label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Trạng thái" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="Processing">Processing</SelectItem>
-                    <SelectItem value="Shipped">Shipped</SelectItem>
-                    <SelectItem value="Delivered">Delivered</SelectItem>
-                    <SelectItem value="Cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tracking Status</label>
-                <Select value={selectedTrackingStatus} onValueChange={setSelectedTrackingStatus}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Tracking" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="In Transit">In Transit</SelectItem>
-                    <SelectItem value="Delivered">Delivered</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Lost">Lost</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Ship By</label>
-                <Select value={selectedShipBy} onValueChange={setSelectedShipBy}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Đơn vị vận chuyển" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tất cả</SelectItem>
-                    <SelectItem value="FedEx">FedEx</SelectItem>
-                    <SelectItem value="UPS">UPS</SelectItem>
-                    <SelectItem value="DHL">DHL</SelectItem>
-                    <SelectItem value="USPS">USPS</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Từ ngày</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: vi }) : "Chọn ngày"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus />
-                  </PopoverContent>
-                </Popover>
-              </div>
             </div>
-
-            <div className="flex gap-2 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm("")
-                  setSelectedAccount("all")
-                  setSelectedStatus("all")
-                  setSelectedTrackingStatus("all")
-                  setSelectedShipBy("all")
-                  setDateFrom(undefined)
-                  setDateTo(undefined)
-                }}
-              >
-                Xóa bộ lọc
-              </Button>
-              <Button>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Đồng bộ API
-              </Button>
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" />
-                Xuất Excel
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Orders Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Danh sách đơn hàng ({filteredOrders.length})</CardTitle>
-            <CardDescription>Quản lý đơn hàng từ các marketplace</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>PO#</TableHead>
-                  <TableHead>Khách hàng</TableHead>
-                  <TableHead>Tài khoản</TableHead>
-                  <TableHead>Marketplace</TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead>Tracking</TableHead>
-                  <TableHead>Ship By</TableHead>
-                  <TableHead>Ngày đặt</TableHead>
-                  <TableHead>Số tiền</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOrders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="font-medium">{order.poNumber}</TableCell>
-                    <TableCell>{order.customerName}</TableCell>
-                    <TableCell>{order.account}</TableCell>
-                    <TableCell>{order.marketplace}</TableCell>
-                    <TableCell>{order.sku}</TableCell>
-                    <TableCell>{getStatusBadge(order.status)}</TableCell>
-                    <TableCell>{getTrackingBadge(order.trackingStatus)}</TableCell>
-                    <TableCell>{order.shipBy}</TableCell>
-                    <TableCell>{format(order.orderDate, "dd/MM/yyyy", { locale: vi })}</TableCell>
-                    <TableCell>${order.amount}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+          <CardContent className="w-full">
+            {/* Search Bar */}
+            <div className="relative mb-6">
+              <div className="relative group max-w-md">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-xl blur-lg group-hover:blur-xl transition-all duration-300"></div>
+                <div className="relative bg-white/90 backdrop-blur-sm border border-white/20 rounded-xl shadow-lg shadow-purple-500/10">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4 z-10 group-hover:text-purple-500 transition-colors duration-200" />
+                  <Input
+                    placeholder="Tìm kiếm đơn hàng..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9 pr-9 py-2 h-10 text-sm border-0 bg-transparent focus:ring-0 focus:outline-none placeholder:text-gray-400 group-hover:placeholder:text-gray-500 transition-all duration-200"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch("")}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors duration-200 hover:scale-110"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {debouncedSearch !== search && (
+                <div className="absolute -right-1 top-1/2 transform -translate-y-1/2">
+                  <div className="bg-purple-500 text-white rounded-full p-0.5 shadow-lg">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* DataGrid Table with horizontal scroll */}
+            <Box
+              sx={{
+                height: "calc(100vh - 400px)",
+                width: "100%",
+              }}
+            >
+              <DataGrid
+                rows={orders}
+                columns={columns}
+                getRowId={(row) => row._id}
+                rowHeight={80}
+                checkboxSelection
+                disableRowSelectionOnClick
+                onRowSelectionModelChange={(newSelectionModel) => {
+                  setSelectedRows(newSelectionModel);
+                }}
+                rowSelectionModel={selectedRows}
+                hideFooter={true}
+                sx={{
+                  "& .MuiDataGrid-cell": {
+                    borderBottom: "1px solid #e5e7eb",
+                  },
+                  "& .MuiDataGrid-columnHeaders": {
+                    backgroundColor: "#f9fafb",
+                    borderBottom: "2px solid #e5e7eb",
+                  },
+                  "& .MuiDataGrid-row:hover": {
+                    backgroundColor: "#f3f4f6",
+                  },
+                }}
+              />
+            </Box>
+            <Pagination
+              className="mt-4"
+              currentPage={page}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              totalPages={totalPages}
+              onPageChange={(page) => setPage(page)}
+            />
           </CardContent>
         </Card>
       </div>
     </SidebarInset>
-  )
+  );
 }

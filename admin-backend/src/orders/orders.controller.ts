@@ -5,66 +5,210 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
   Query,
+  Body,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { FakeOrdersSeed } from './seeds/fake-orders.seed';
 
 @ApiTags('Orders')
-@ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'))
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly fakeOrdersSeed: FakeOrdersSeed,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Create a new order' })
   @ApiResponse({ status: 201, description: 'Order created successfully' })
-  create(createOrderDto: CreateOrderDto) {
+  create(@Body() createOrderDto: CreateOrderDto) {
     return this.ordersService.create(createOrderDto);
   }
 
+  @Post('seed')
+  @ApiOperation({ summary: 'Seed fake orders data' })
+  @ApiResponse({ status: 201, description: 'Orders seeded successfully' })
+  async seed() {
+    return this.fakeOrdersSeed.seed();
+  }
+
   @Get()
-  @ApiOperation({ summary: 'Get all orders' })
+  @ApiOperation({ summary: 'Get all orders with pagination and search' })
   @ApiResponse({ status: 200, description: 'Orders retrieved successfully' })
-  @ApiQuery({ name: 'account', required: false })
-  @ApiQuery({ name: 'status', required: false })
-  @ApiQuery({ name: 'startDate', required: false })
-  @ApiQuery({ name: 'endDate', required: false })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number (default: 1)',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page (default: 25)',
+    type: Number,
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description:
+      'Search term for order number, PO number, SKU, or tracking number',
+  })
   findAll(
-    @Query('account') account?: string,
-    @Query('status') status?: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 25,
+    @Query('search') search?: string,
   ) {
-    if (account) {
-      return this.ordersService.findByAccount(account);
-    }
-    if (status) {
-      return this.ordersService.findByStatus(status);
-    }
-    if (startDate && endDate) {
-      return this.ordersService.findByDateRange(
-        new Date(startDate),
-        new Date(endDate),
-      );
-    }
-    return this.ordersService.findAll();
+    return this.ordersService.findAll(Number(page), Number(limit), search);
+  }
+
+  @Get('filter/order-number')
+  @ApiOperation({ summary: 'Filter orders by order number' })
+  @ApiResponse({ status: 200, description: 'Orders filtered successfully' })
+  @ApiQuery({
+    name: 'orderNumber',
+    required: true,
+    description: 'Filter by order number',
+  })
+  findByOrderNumber(@Query('orderNumber') orderNumber: string) {
+    return this.ordersService.findByOrderNumber(orderNumber);
+  }
+
+  @Get('filter/po-number')
+  @ApiOperation({ summary: 'Filter orders by PO number' })
+  @ApiResponse({ status: 200, description: 'Orders filtered successfully' })
+  @ApiQuery({
+    name: 'poNumber',
+    required: true,
+    description: 'Filter by PO number',
+  })
+  findByPoNumber(@Query('poNumber') poNumber: string) {
+    return this.ordersService.findByPoNumber(poNumber);
+  }
+
+  @Get('filter/tracking-status')
+  @ApiOperation({ summary: 'Filter orders by tracking status' })
+  @ApiResponse({ status: 200, description: 'Orders filtered successfully' })
+  @ApiQuery({
+    name: 'trackingStatus',
+    required: true,
+    description: 'Filter by tracking status',
+  })
+  findByTrackingStatus(@Query('trackingStatus') trackingStatus: string) {
+    return this.ordersService.findByTrackingStatus(trackingStatus);
+  }
+
+  @Get('filter/sku')
+  @ApiOperation({ summary: 'Filter orders by SKU' })
+  @ApiResponse({ status: 200, description: 'Orders filtered successfully' })
+  @ApiQuery({
+    name: 'sku',
+    required: true,
+    description: 'Filter by SKU',
+  })
+  findBySku(@Query('sku') sku: string) {
+    return this.ordersService.findBySku(sku);
+  }
+
+  @Get('filter/date-range')
+  @ApiOperation({ summary: 'Filter orders by date range' })
+  @ApiResponse({ status: 200, description: 'Orders filtered successfully' })
+  @ApiQuery({
+    name: 'startDate',
+    required: true,
+    description: 'Filter by order date start',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: true,
+    description: 'Filter by order date end',
+  })
+  findByDateRange(
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+  ) {
+    return this.ordersService.findByDateRange(
+      new Date(startDate),
+      new Date(endDate),
+    );
+  }
+
+  @Get('filter/ship-by-date-range')
+  @ApiOperation({ summary: 'Filter orders by ship by date range' })
+  @ApiResponse({ status: 200, description: 'Orders filtered successfully' })
+  @ApiQuery({
+    name: 'shipByStart',
+    required: true,
+    description: 'Filter by ship by date start',
+  })
+  @ApiQuery({
+    name: 'shipByEnd',
+    required: true,
+    description: 'Filter by ship by date end',
+  })
+  findByShipByDateRange(
+    @Query('shipByStart') shipByStart: string,
+    @Query('shipByEnd') shipByEnd: string,
+  ) {
+    return this.ordersService.findByShipByDateRange(
+      new Date(shipByStart),
+      new Date(shipByEnd),
+    );
+  }
+
+  @Get('filter/high-profit')
+  @ApiOperation({ summary: 'Filter orders by minimum profit' })
+  @ApiResponse({ status: 200, description: 'Orders filtered successfully' })
+  @ApiQuery({
+    name: 'minProfit',
+    required: true,
+    description: 'Filter by minimum profit',
+    type: Number,
+  })
+  findHighProfitOrders(@Query('minProfit') minProfit: string) {
+    return this.ordersService.findHighProfitOrders(parseFloat(minProfit));
+  }
+
+  @Get('filter/high-roi')
+  @ApiOperation({ summary: 'Filter orders by minimum ROI' })
+  @ApiResponse({ status: 200, description: 'Orders filtered successfully' })
+  @ApiQuery({
+    name: 'minROI',
+    required: true,
+    description: 'Filter by minimum ROI',
+    type: Number,
+  })
+  findHighROIOrders(@Query('minROI') minROI: string) {
+    return this.ordersService.findHighROIOrders(parseFloat(minROI));
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: 'Get order statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Order statistics retrieved successfully',
+  })
+  getStats() {
+    return this.ordersService.getOrderStats();
+  }
+
+  @Get('stats/tracking-status')
+  @ApiOperation({ summary: 'Get tracking status statistics' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tracking status statistics retrieved successfully',
+  })
+  getTrackingStatusStats() {
+    return this.ordersService.getTrackingStatusStats();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get order by ID' })
   @ApiResponse({ status: 200, description: 'Order retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
   findOne(@Param('id') id: string) {
     return this.ordersService.findOne(id);
   }
@@ -72,13 +216,15 @@ export class OrdersController {
   @Patch(':id')
   @ApiOperation({ summary: 'Update order' })
   @ApiResponse({ status: 200, description: 'Order updated successfully' })
-  update(@Param('id') id: string, updateOrderDto: UpdateOrderDto) {
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
     return this.ordersService.update(id, updateOrderDto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete order' })
   @ApiResponse({ status: 200, description: 'Order deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
   remove(@Param('id') id: string) {
     return this.ordersService.remove(id);
   }

@@ -13,12 +13,64 @@ export class OrdersService {
   ) {}
 
   async create(createOrderDto: CreateOrderDto): Promise<Order> {
-    const createdOrder = new this.orderModel(createOrderDto);
+    // Calculate derived fields if not provided
+    const orderData = { ...createOrderDto };
+
+    if (
+      !orderData.netProfit &&
+      orderData.sellingPrice &&
+      orderData.sourcingPrice
+    ) {
+      orderData.netProfit = orderData.sellingPrice - orderData.sourcingPrice;
+      if (orderData.walmartFee) {
+        orderData.netProfit -= orderData.walmartFee;
+      }
+    }
+
+    if (!orderData.roi && orderData.netProfit && orderData.sourcingPrice) {
+      orderData.roi = (orderData.netProfit / orderData.sourcingPrice) * 100;
+    }
+
+    const createdOrder = new this.orderModel(orderData);
     return createdOrder.save();
   }
 
-  async findAll(): Promise<Order[]> {
-    return this.orderModel.find().exec();
+  async findAll(
+    page: number = 1,
+    limit: number = 25,
+    search?: string,
+  ): Promise<{
+    data: Order[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    const query: any = {};
+    if (search) {
+      query.$or = [
+        { orderNumber: { $regex: search, $options: 'i' } },
+        { poNumber: { $regex: search, $options: 'i' } },
+        { sku: { $regex: search, $options: 'i' } },
+        { trackingNumber: { $regex: search, $options: 'i' } },
+      ];
+    }
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.orderModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      this.orderModel.countDocuments(query).exec(),
+    ]);
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string): Promise<Order> {
@@ -30,8 +82,29 @@ export class OrdersService {
   }
 
   async update(id: string, updateOrderDto: UpdateOrderDto): Promise<Order> {
+    // Recalculate derived fields if pricing changes
+    const orderData = { ...updateOrderDto };
+
+    if (
+      orderData.sellingPrice ||
+      orderData.sourcingPrice ||
+      orderData.walmartFee
+    ) {
+      const currentOrder = await this.orderModel.findById(id).exec();
+      if (currentOrder) {
+        const sellingPrice =
+          orderData.sellingPrice ?? currentOrder.sellingPrice;
+        const sourcingPrice =
+          orderData.sourcingPrice ?? currentOrder.sourcingPrice;
+        const walmartFee = orderData.walmartFee ?? currentOrder.walmartFee ?? 0;
+
+        orderData.netProfit = sellingPrice - sourcingPrice - walmartFee;
+        orderData.roi = (orderData.netProfit / sourcingPrice) * 100;
+      }
+    }
+
     const updatedOrder = await this.orderModel
-      .findByIdAndUpdate(id, updateOrderDto, { new: true })
+      .findByIdAndUpdate(id, orderData, { new: true })
       .exec();
 
     if (!updatedOrder) {
@@ -47,12 +120,20 @@ export class OrdersService {
     }
   }
 
-  async findByAccount(account: string): Promise<Order[]> {
-    return this.orderModel.find({ account }).exec();
+  async findByOrderNumber(orderNumber: string): Promise<Order[]> {
+    return this.orderModel.find({ orderNumber }).exec();
   }
 
-  async findByStatus(status: string): Promise<Order[]> {
-    return this.orderModel.find({ status }).exec();
+  async findByPoNumber(poNumber: string): Promise<Order[]> {
+    return this.orderModel.find({ poNumber }).exec();
+  }
+
+  async findByTrackingStatus(trackingStatus: string): Promise<Order[]> {
+    return this.orderModel.find({ trackingStatus }).exec();
+  }
+
+  async findBySku(sku: string): Promise<Order[]> {
+    return this.orderModel.find({ sku }).exec();
   }
 
   async findByDateRange(startDate: Date, endDate: Date): Promise<Order[]> {
@@ -63,6 +144,77 @@ export class OrdersService {
           $lte: endDate,
         },
       })
+      .sort({ orderDate: -1 })
       .exec();
+  }
+
+  async findByShipByDateRange(
+    startDate: Date,
+    endDate: Date,
+  ): Promise<Order[]> {
+    return this.orderModel
+      .find({
+        shipBy: {
+          $gte: startDate,
+          $lte: endDate,
+        },
+      })
+      .sort({ shipBy: -1 })
+      .exec();
+  }
+
+  async findHighProfitOrders(minProfit: number): Promise<Order[]> {
+    return this.orderModel
+      .find({ netProfit: { $gte: minProfit } })
+      .sort({ netProfit: -1 })
+      .exec();
+  }
+
+  async findHighROIOrders(minROI: number): Promise<Order[]> {
+    return this.orderModel
+      .find({ roi: { $gte: minROI } })
+      .sort({ roi: -1 })
+      .exec();
+  }
+
+  async getOrderStats() {
+    const stats = await this.orderModel.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalOrders: { $sum: 1 },
+          totalQuantity: { $sum: '$quantity' },
+          totalRevenue: { $sum: { $multiply: ['$sellingPrice', '$quantity'] } },
+          totalCost: { $sum: { $multiply: ['$sourcingPrice', '$quantity'] } },
+          totalProfit: { $sum: { $multiply: ['$netProfit', '$quantity'] } },
+          avgROI: { $avg: '$roi' },
+        },
+      },
+    ]);
+
+    return (
+      stats[0] || {
+        totalOrders: 0,
+        totalQuantity: 0,
+        totalRevenue: 0,
+        totalCost: 0,
+        totalProfit: 0,
+        avgROI: 0,
+      }
+    );
+  }
+
+  async getTrackingStatusStats() {
+    return this.orderModel.aggregate([
+      {
+        $group: {
+          _id: '$trackingStatus',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { count: -1 },
+      },
+    ]);
   }
 }

@@ -4,6 +4,7 @@ import { AdminSeed } from './users/seeds/admin.seed';
 import { FakeUsersSeed } from './users/seeds/fake-users.seed';
 import { FakeAccountsSeed } from './accounts/seeds/fake-accounts.seed';
 import { FakeProductsSeed } from './products/seeds/fake-products.seed';
+import { FakeOrdersSeed } from './orders/seeds/fake-orders.seed';
 
 async function seed() {
   console.log('🌱 Starting database seeding...');
@@ -16,6 +17,7 @@ async function seed() {
     const fakeUsersSeed = app.get(FakeUsersSeed);
     const fakeAccountsSeed = app.get(FakeAccountsSeed);
     const fakeProductsSeed = app.get(FakeProductsSeed);
+    const fakeOrdersSeed = app.get(FakeOrdersSeed);
 
     // Run admin seed first
     console.log('👑 Seeding admin user...');
@@ -31,6 +33,9 @@ async function seed() {
 
     console.log('🏦 Seeding fake products with 30 products ...');
     await fakeProductsSeed.seed(30); // Generate 30 fake products
+
+    console.log('🏦 Seeding fake products with 30 products ...');
+    await fakeOrdersSeed.seed(30);
 
     console.log('✅ Database seeding completed successfully!');
   } catch (error) {
