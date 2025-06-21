@@ -56,7 +56,7 @@ export default function AccountsPage() {
 
   const handleDelete = (account: any) => {
     if (confirm(`Bạn có chắc muốn xóa tài khoản ${account.accName}?`)) {
-      deleteAccountMutation.mutate(account.id);
+      deleteAccountMutation.mutate(account._id);
     }
   };
 

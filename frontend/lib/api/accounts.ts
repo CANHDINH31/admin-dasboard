@@ -13,6 +13,8 @@ export interface Account {
   telegramId: string;
   status: "active" | "inactive" | "suspended";
   createdAt: string;
+  updatedAt: string;
+  __v: number;
   lastSync: string;
 }
 
@@ -51,6 +53,6 @@ export const accountsApi = {
     axiosInstance.post<Account>("/accounts", data),
 
   updateAccount: (id: string, data: UpdateAccountRequest) =>
-    axiosInstance.patch<Account>(`/accounts/${id}`, data),
+    axiosInstance.put<Account>(`/accounts/${id}`, data),
   deleteAccount: (id: string) => axiosInstance.delete(`/accounts/${id}`),
 };

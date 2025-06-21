@@ -10,19 +10,30 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  useCreateAccount,
+  useUpdateAccount,
+  type Account,
+} from "@/lib/hooks/useAccounts";
 
 const MARKETPLACES = ["eBay", "Walmart", "AMZ"];
-const STATUSES = ["active", "inactive", "suspended", "freeze"];
+const STATUSES = ["active", "inactive", "suspended"] as const;
+
+interface AccountDialogProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  editingAccount: Account | null;
+  onAddClick: () => void;
+}
 
 export function AccountDialog({
   isOpen,
   onOpenChange,
   editingAccount,
-  onSubmit,
   onAddClick,
-}: any) {
+}: AccountDialogProps) {
   const [form, setForm] = useState({
-    marketplace: "eBay",
+    marketplace: "eBay" as string,
     accName: "",
     profileName: "",
     sheetID: "",
@@ -31,15 +42,20 @@ export function AccountDialog({
     clientID: "",
     clientSecret: "",
     telegramId: "",
-    status: "active",
+    status: "active" as "active" | "inactive" | "suspended",
   });
+
+  const createAccountMutation = useCreateAccount();
+  const updateAccountMutation = useUpdateAccount();
 
   useEffect(() => {
     if (editingAccount) {
-      setForm({ ...form, ...editingAccount });
+      // Filter out MongoDB-specific properties
+      const { _id, createdAt, updatedAt, __v, ...accountData } = editingAccount;
+      setForm({ ...form, ...accountData });
     } else {
       setForm({
-        marketplace: "eBay",
+        marketplace: "eBay" as string,
         accName: "",
         profileName: "",
         sheetID: "",
@@ -48,7 +64,7 @@ export function AccountDialog({
         clientID: "",
         clientSecret: "",
         telegramId: "",
-        status: "active",
+        status: "active" as "active" | "inactive" | "suspended",
       });
     }
     // eslint-disable-next-line
@@ -59,10 +75,22 @@ export function AccountDialog({
     setForm((prev: any) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!form.accName || !form.marketplace || !form.profileName) return;
-    onSubmit(form);
+
+    if (editingAccount) {
+      // Update existing account
+      updateAccountMutation.mutate({
+        id: editingAccount._id,
+        data: form,
+      });
+    } else {
+      // Create new account
+      createAccountMutation.mutate(form);
+    }
+
     onOpenChange(false);
   };
 

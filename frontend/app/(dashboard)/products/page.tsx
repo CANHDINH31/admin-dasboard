@@ -1,28 +1,33 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
-import { AdvancedTable, type Column } from "@/components/advanced-table"
-import { Badge } from "@/components/ui/badge"
-import { Eye, TrendingUp, TrendingDown, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Badge } from "@/components/ui/badge";
+import { Eye, TrendingUp, TrendingDown, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Product {
-  id: string
-  sku: string
-  name: string
-  account: string
-  marketplace: string
-  price: number
-  stock: number
-  status: string
-  trackingStatus: string
-  views: number
-  sales: number
-  revenue: number
-  conversionRate: number
-  lastUpdated: string
+  id: string;
+  sku: string;
+  name: string;
+  account: string;
+  marketplace: string;
+  price: number;
+  stock: number;
+  status: string;
+  trackingStatus: string;
+  views: number;
+  sales: number;
+  revenue: number;
+  conversionRate: number;
+  lastUpdated: string;
 }
 
 const mockProducts: Product[] = [
@@ -122,16 +127,20 @@ const mockProducts: Product[] = [
     conversionRate: 1.14,
     lastUpdated: "2024-01-19 16:45:00",
   },
-]
+];
 
 const getMarketplaceBadge = (marketplace: string) => {
   const colors = {
     eBay: "bg-blue-500 text-white",
     Amazon: "bg-orange-500 text-white",
     Walmart: "bg-green-500 text-white",
-  }
-  return <Badge className={colors[marketplace as keyof typeof colors] || ""}>{marketplace}</Badge>
-}
+  };
+  return (
+    <Badge className={colors[marketplace as keyof typeof colors] || ""}>
+      {marketplace}
+    </Badge>
+  );
+};
 
 const getStatusBadge = (status: string) => {
   const variants = {
@@ -141,16 +150,20 @@ const getStatusBadge = (status: string) => {
     tracking: "default",
     paused: "secondary",
     stopped: "destructive",
-  } as const
-  return <Badge variant={variants[status as keyof typeof variants] || "outline"}>{status}</Badge>
-}
+  } as const;
+  return (
+    <Badge variant={variants[status as keyof typeof variants] || "outline"}>
+      {status}
+    </Badge>
+  );
+};
 
 const CurrencyCell = ({ value }: { value: number }) => (
   <span className="font-mono font-semibold">${value.toLocaleString()}</span>
-)
+);
 
 const ProgressBar = ({ value, max = 5 }: { value: number; max?: number }) => {
-  const percentage = Math.min((value / max) * 100, 100)
+  const percentage = Math.min((value / max) * 100, 100);
   return (
     <div className="w-full">
       <div className="flex justify-between text-xs mb-1">
@@ -158,14 +171,17 @@ const ProgressBar = ({ value, max = 5 }: { value: number; max?: number }) => {
         <span>{percentage.toFixed(1)}%</span>
       </div>
       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-        <div className="bg-blue-600 h-2 rounded-full transition-all duration-300" style={{ width: `${percentage}%` }} />
+        <div
+          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+          style={{ width: `${percentage}%` }}
+        />
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default function ProductsPage() {
-  const [data, setData] = useState<Product[]>(mockProducts)
+  const [data, setData] = useState<Product[]>(mockProducts);
 
   const columns: Column<Product>[] = [
     {
@@ -173,7 +189,11 @@ export default function ProductsPage() {
       header: "SKU",
       sortable: true,
       filterable: true,
-      render: (value) => <code className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-1 rounded">{value}</code>,
+      render: (value) => (
+        <code className="text-xs font-mono bg-gray-100 dark:bg-gray-800 px-1 rounded">
+          {value}
+        </code>
+      ),
       width: "w-24",
     },
     {
@@ -181,7 +201,11 @@ export default function ProductsPage() {
       header: "Tên sản phẩm",
       sortable: true,
       filterable: true,
-      render: (value) => <div className="font-medium text-sm leading-tight py-1 max-w-48 truncate">{value}</div>,
+      render: (value) => (
+        <div className="font-medium text-sm leading-tight py-1 max-w-48 truncate">
+          {value}
+        </div>
+      ),
       width: "w-64",
     },
     {
@@ -219,7 +243,13 @@ export default function ProductsPage() {
       filterable: true,
       filterType: "number",
       render: (value) => (
-        <span className={`font-semibold ${value === 0 ? "text-red-600" : "text-green-600"}`}>{value}</span>
+        <span
+          className={`font-semibold ${
+            value === 0 ? "text-red-600" : "text-green-600"
+          }`}
+        >
+          {value}
+        </span>
       ),
       width: "w-20",
     },
@@ -229,7 +259,11 @@ export default function ProductsPage() {
       sortable: true,
       filterable: true,
       filterType: "number",
-      render: (value) => <span className="text-blue-600 dark:text-blue-400 font-medium">{value.toLocaleString()}</span>,
+      render: (value) => (
+        <span className="text-blue-600 dark:text-blue-400 font-medium">
+          {value.toLocaleString()}
+        </span>
+      ),
       width: "w-24",
     },
     {
@@ -238,7 +272,9 @@ export default function ProductsPage() {
       sortable: true,
       filterable: true,
       filterType: "number",
-      render: (value) => <span className="text-green-600 font-semibold">{value}</span>,
+      render: (value) => (
+        <span className="text-green-600 font-semibold">{value}</span>
+      ),
       width: "w-20",
     },
     {
@@ -286,34 +322,34 @@ export default function ProductsPage() {
       filterable: true,
       width: "w-36",
     },
-  ]
+  ];
 
   const handleEdit = (product: Product) => {
-    console.log("Edit product:", product.id)
-  }
+    console.log("Edit product:", product.id);
+  };
 
   const handleDelete = (product: Product) => {
-    setData(data.filter((item) => item.id !== product.id))
-  }
+    setData(data.filter((item) => item.id !== product.id));
+  };
 
   const handleExport = () => {
     const csvContent = [
       Object.keys(mockProducts[0]).join(","),
       ...data.map((row) => Object.values(row).join(",")),
-    ].join("\n")
+    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "products.csv"
-    a.click()
-  }
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "products.csv";
+    a.click();
+  };
 
-  const totalProducts = data.length
-  const activeProducts = data.filter((p) => p.status === "active").length
-  const outOfStock = data.filter((p) => p.status === "out of stock").length
-  const totalRevenue = data.reduce((sum, p) => sum + p.revenue, 0)
+  const totalProducts = data.length;
+  const activeProducts = data.filter((p) => p.status === "active").length;
+  const outOfStock = data.filter((p) => p.status === "out of stock").length;
+  const totalRevenue = data.reduce((sum, p) => sum + p.revenue, 0);
 
   return (
     <SidebarInset>
@@ -328,7 +364,9 @@ export default function ProductsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-violet-600 text-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Tổng sản phẩm</CardTitle>
+              <CardTitle className="text-sm font-medium opacity-90">
+                Tổng sản phẩm
+              </CardTitle>
               <Eye className="h-5 w-5 opacity-80" />
             </CardHeader>
             <CardContent>
@@ -339,7 +377,9 @@ export default function ProductsPage() {
 
           <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Đang hoạt động</CardTitle>
+              <CardTitle className="text-sm font-medium opacity-90">
+                Đang hoạt động
+              </CardTitle>
               <TrendingUp className="h-5 w-5 opacity-80" />
             </CardHeader>
             <CardContent>
@@ -350,7 +390,9 @@ export default function ProductsPage() {
 
           <Card className="border-0 shadow-lg bg-gradient-to-br from-red-500 to-pink-600 text-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Hết hàng</CardTitle>
+              <CardTitle className="text-sm font-medium opacity-90">
+                Hết hàng
+              </CardTitle>
               <TrendingDown className="h-5 w-5 opacity-80" />
             </CardHeader>
             <CardContent>
@@ -361,11 +403,15 @@ export default function ProductsPage() {
 
           <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-cyan-600 text-white">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Tổng doanh thu</CardTitle>
+              <CardTitle className="text-sm font-medium opacity-90">
+                Tổng doanh thu
+              </CardTitle>
               <TrendingUp className="h-5 w-5 opacity-80" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
+              <div className="text-2xl font-bold">
+                ${totalRevenue.toLocaleString()}
+              </div>
               <p className="text-xs opacity-80">Từ tất cả sản phẩm</p>
             </CardContent>
           </Card>
@@ -376,9 +422,12 @@ export default function ProductsPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-gray-900 dark:text-gray-100">Danh sách sản phẩm</CardTitle>
+                <CardTitle className="text-gray-900 dark:text-gray-100">
+                  Danh sách sản phẩm
+                </CardTitle>
                 <CardDescription>
-                  Theo dõi và quản lý sản phẩm theo tài khoản. Sử dụng search và filter để tìm kiếm dữ liệu.
+                  Theo dõi và quản lý sản phẩm theo tài khoản. Sử dụng search và
+                  filter để tìm kiếm dữ liệu.
                 </CardDescription>
               </div>
               <Button className="bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700">
@@ -400,5 +449,5 @@ export default function ProductsPage() {
         </Card>
       </div>
     </SidebarInset>
-  )
+  );
 }
