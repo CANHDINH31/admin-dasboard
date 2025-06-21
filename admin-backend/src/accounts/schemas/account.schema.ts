@@ -1,46 +1,43 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
-import type { Document } from "mongoose"
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import type { Document } from 'mongoose';
 
-export type AccountDocument = Account & Document
+export type AccountDocument = Account & Document;
 
 @Schema({ timestamps: true })
 export class Account {
-  @Prop({ required: true })
-  marketplace: string
+  @Prop({ required: true, enum: ['eBay', 'Walmart', 'AMZ'] })
+  marketplace: string;
 
   @Prop({ required: true, unique: true })
-  accName: string
+  accName: string;
 
   @Prop({ required: true })
-  profileName: string
+  profileName: string;
 
   @Prop()
-  sheetID?: string
+  sheetID?: string;
 
   @Prop()
-  accountInfo?: string
+  accountInfo?: string;
 
   @Prop()
-  proxy?: string
+  proxy?: string;
 
   @Prop()
-  clientID?: string
+  clientID?: string;
 
   @Prop()
-  clientSecret?: string
+  clientSecret?: string;
 
   @Prop()
-  telegramId?: string
+  telegramId?: string;
 
   @Prop({
     required: true,
-    enum: ["active", "inactive", "suspended"],
-    default: "active",
+    enum: ['active', 'inactive', 'suspended', 'freeze'],
+    default: 'active',
   })
-  status: string
-
-  @Prop({ default: Date.now })
-  lastSync: Date
+  status: string;
 }
 
-export const AccountSchema = SchemaFactory.createForClass(Account)
+export const AccountSchema = SchemaFactory.createForClass(Account);

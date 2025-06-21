@@ -10,6 +10,7 @@ import { TasksModule } from './tasks/tasks.module';
 import { AuthModule } from './auth/auth.module';
 import { SeedsModule } from './users/seeds/seeds.module';
 import { SeedCommand } from './users/seeds/seed.command';
+import { AccountsSeedsModule } from './accounts/seeds/seeds.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { SeedCommand } from './users/seeds/seed.command';
     TasksModule,
     AuthModule,
     SeedsModule,
+    AccountsSeedsModule,
   ],
   providers: [SeedCommand],
 })

@@ -17,8 +17,35 @@ export class AccountsService {
     return createdAccount.save();
   }
 
-  async findAll(): Promise<Account[]> {
-    return this.accountModel.find().exec();
+  async findAll(
+    page: number = 1,
+    limit: number = 25,
+    search?: string,
+  ): Promise<{
+    data: Account[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    const query: any = {};
+    if (search) {
+      query.$or = [
+        { accName: { $regex: search, $options: 'i' } },
+        { profileName: { $regex: search, $options: 'i' } },
+      ];
+    }
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      this.accountModel.find(query).skip(skip).limit(limit).exec(),
+      this.accountModel.countDocuments(query).exec(),
+    ]);
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(id: string): Promise<Account> {

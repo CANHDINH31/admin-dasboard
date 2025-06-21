@@ -1,51 +1,52 @@
-import { ApiProperty } from "@nestjs/swagger"
-import { IsNotEmpty, IsOptional, IsEnum } from "class-validator"
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
 
 export class CreateAccountDto {
-  @ApiProperty({ example: "eBay" })
+  @ApiProperty({ example: 'eBay', enum: ['eBay', 'Walmart', 'AMZ'] })
   @IsNotEmpty()
-  marketplace: string
+  @IsEnum(['eBay', 'Walmart', 'AMZ'])
+  marketplace: string;
 
-  @ApiProperty({ example: "ebay_store_01" })
+  @ApiProperty({ example: 'ebay_store_01' })
   @IsNotEmpty()
-  accName: string
+  accName: string;
 
-  @ApiProperty({ example: "Main Store" })
+  @ApiProperty({ example: 'Main Store' })
   @IsNotEmpty()
-  profileName: string
+  profileName: string;
 
   @ApiProperty({
-    example: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
+    example: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
     required: false,
   })
   @IsOptional()
-  sheetID?: string
+  sheetID?: string;
 
-  @ApiProperty({ example: "Active seller account", required: false })
+  @ApiProperty({ example: 'Active seller account', required: false })
   @IsOptional()
-  accountInfo?: string
+  accountInfo?: string;
 
-  @ApiProperty({ example: "192.168.1.100:8080", required: false })
+  @ApiProperty({ example: '192.168.1.100:8080', required: false })
   @IsOptional()
-  proxy?: string
+  proxy?: string;
 
-  @ApiProperty({ example: "client_123", required: false })
+  @ApiProperty({ example: 'client_123', required: false })
   @IsOptional()
-  clientID?: string
+  clientID?: string;
 
-  @ApiProperty({ example: "secret_456", required: false })
+  @ApiProperty({ example: 'secret_456', required: false })
   @IsOptional()
-  clientSecret?: string
+  clientSecret?: string;
 
-  @ApiProperty({ example: "@store_bot", required: false })
+  @ApiProperty({ example: '@store_bot', required: false })
   @IsOptional()
-  telegramId?: string
+  telegramId?: string;
 
   @ApiProperty({
-    example: "active",
-    enum: ["active", "inactive", "suspended"],
+    example: 'active',
+    enum: ['active', 'inactive', 'suspended', 'freeze'],
   })
-  @IsEnum(["active", "inactive", "suspended"])
+  @IsEnum(['active', 'inactive', 'suspended', 'freeze'])
   @IsOptional()
-  status?: string
+  status?: string;
 }
