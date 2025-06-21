@@ -28,6 +28,14 @@ export const menuItems: MenuItem[] = [
     permission: "view_dashboard",
   },
   {
+    title: "Thống kê",
+    url: "/stats",
+    icon: BarChart3,
+    color: "text-indigo-600 dark:text-indigo-400",
+    bgColor: "hover:bg-indigo-50 dark:hover:bg-indigo-900/20",
+    permission: "view_stats",
+  },
+  {
     title: "Quản lý users",
     url: "/users",
     icon: UserCog,

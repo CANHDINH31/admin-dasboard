@@ -8,6 +8,7 @@ import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { TasksModule } from './tasks/tasks.module';
 import { AuthModule } from './auth/auth.module';
+import { StatsModule } from './stats/stats.module';
 import { SeedsModule } from './users/seeds/seeds.module';
 import { SeedCommand } from './users/seeds/seed.command';
 import { AccountsSeedsModule } from './accounts/seeds/seeds.module';
@@ -29,6 +30,7 @@ import { ProductSeedCommand } from './products/seeds/seed.command';
     OrdersModule,
     TasksModule,
     AuthModule,
+    StatsModule,
     SeedsModule,
     AccountsSeedsModule,
     ProductSeedsModule,

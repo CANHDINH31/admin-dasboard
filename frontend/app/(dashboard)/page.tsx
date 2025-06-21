@@ -1,138 +1,142 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
-import { Users, Package, ShoppingCart, CheckSquare, TrendingUp, DollarSign } from "lucide-react"
+"use client";
 
-export default function Dashboard() {
+import React from "react";
+import { DashboardStats } from "@/components/dashboard/DashboardStats";
+import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
+import { TopProducts } from "@/components/dashboard/TopProducts";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import { useStats } from "@/lib/hooks/useStats";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+
+export default function DashboardPage() {
+  const { dashboardStats, chartData, loading, error, refreshStats } =
+    useStats();
+
+  if (loading) {
+    return (
+      <SidebarInset>
+        <DashboardSkeleton />
+      </SidebarInset>
+    );
+  }
+
+  if (error) {
+    return (
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white dark:bg-gray-900 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <h1 className="text-xl font-semibold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+            Dashboard
+          </h1>
+        </header>
+        <div className="flex flex-1 flex-col gap-6 p-6 bg-gradient-to-br from-cyan-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {error}
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-2"
+                onClick={refreshStats}
+              >
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </SidebarInset>
+    );
+  }
+
+  if (!dashboardStats || !chartData) {
+    return (
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white dark:bg-gray-900 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <h1 className="text-xl font-semibold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+            Dashboard
+          </h1>
+        </header>
+        <div className="flex flex-1 flex-col gap-6 p-6 bg-gradient-to-br from-cyan-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">No data available</p>
+            <Button onClick={refreshStats} className="mt-2">
+              Refresh
+            </Button>
+          </div>
+        </div>
+      </SidebarInset>
+    );
+  }
+
   return (
     <SidebarInset>
       <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-white dark:bg-gray-900 px-4">
         <SidebarTrigger className="-ml-1" />
-        <h1 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Dashboard Overview
+        <h1 className="text-xl font-semibold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+          Dashboard
         </h1>
       </header>
-      <div className="flex flex-1 flex-col gap-6 p-6 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="grid auto-rows-min gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Tổng tài khoản</CardTitle>
-              <Users className="h-5 w-5 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">24</div>
-              <p className="text-xs opacity-80 mt-1">+2 từ tháng trước</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-500 to-emerald-600 text-white hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Sản phẩm</CardTitle>
-              <Package className="h-5 w-5 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">1,234</div>
-              <p className="text-xs opacity-80 mt-1">+15% từ tháng trước</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-500 to-violet-600 text-white hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Đơn hàng</CardTitle>
-              <ShoppingCart className="h-5 w-5 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">567</div>
-              <p className="text-xs opacity-80 mt-1">+8% từ tuần trước</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-500 to-rose-600 text-white hover:shadow-xl transition-all duration-300 transform hover:scale-105">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium opacity-90">Tác vụ hoạt động</CardTitle>
-              <CheckSquare className="h-5 w-5 opacity-80" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">12</div>
-              <p className="text-xs opacity-80 mt-1">3 hoàn thành hôm nay</p>
-            </CardContent>
-          </Card>
+      <div className="flex flex-1 flex-col gap-6 p-6 bg-gradient-to-br from-cyan-50 to-blue-100 dark:from-gray-900 dark:to-gray-800">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+              Overview
+            </h2>
+            <p className="text-muted-foreground">
+              Overview of your business metrics and performance
+            </p>
+          </div>
+          <Button onClick={refreshStats} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card className="border-0 shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-500" />
-                Doanh thu tháng này
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-600">$45,231</div>
-              <p className="text-sm text-muted-foreground mt-1">+20.1% so với tháng trước</p>
-              <div className="mt-4 h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-green-400 to-emerald-500 rounded-full transition-all duration-500"
-                  style={{ width: "75%" }}
-                ></div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Stats Cards */}
+        <DashboardStats stats={dashboardStats} />
 
-          <Card className="border-0 shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5 text-blue-500" />
-                Lợi nhuận
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-600">$12,456</div>
-              <p className="text-sm text-muted-foreground mt-1">+12.5% so với tháng trước</p>
-              <div className="mt-4 h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-400 to-cyan-500 rounded-full transition-all duration-500"
-                  style={{ width: "60%" }}
-                ></div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Charts and Top Products */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <DashboardCharts chartData={chartData} stats={dashboardStats} />
+          </div>
+          <div className="space-y-6">
+            <TopProducts
+              topProducts={dashboardStats.revenueStats.topProducts}
+            />
+
+            {/* Quick Actions */}
+            <Card className="border-0 shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-gray-900 dark:text-gray-100">
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button variant="outline" className="w-full justify-start">
+                  Add New Product
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  Create Order
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  Manage Accounts
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  View Reports
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-
-        <Card className="border-0 shadow-lg bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-gray-900 dark:text-gray-100">Hoạt động gần đây</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { action: "Đồng bộ sản phẩm eBay", time: "2 phút trước", status: "success" },
-                { action: "Cập nhật đơn hàng Amazon", time: "5 phút trước", status: "success" },
-                { action: "Tracking đơn hàng #12345", time: "10 phút trước", status: "warning" },
-                { action: "Backup dữ liệu", time: "1 giờ trước", status: "success" },
-              ].map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 hover:shadow-md transition-all duration-200"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-3 h-3 rounded-full ${
-                        item.status === "success"
-                          ? "bg-green-500 shadow-lg shadow-green-500/50"
-                          : item.status === "warning"
-                            ? "bg-yellow-500 shadow-lg shadow-yellow-500/50"
-                            : "bg-red-500 shadow-lg shadow-red-500/50"
-                      }`}
-                    ></div>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{item.action}</span>
-                  </div>
-                  <span className="text-sm text-gray-500">{item.time}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </SidebarInset>
-  )
+  );
 }
